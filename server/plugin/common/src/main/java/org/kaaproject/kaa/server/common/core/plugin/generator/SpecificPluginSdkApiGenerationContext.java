@@ -35,13 +35,18 @@ public class SpecificPluginSdkApiGenerationContext<T> implements PluginSdkApiGen
     }
 
     @Override
-    public byte[] getPluginConfigurationData() {
+    public String getPluginConfigurationData() {
         return base.getPluginConfigurationData();
     }
 
     @Override
     public Set<PluginContractInstance> getPluginContracts() {
         return base.getPluginContracts();
+    }
+
+    @Override
+    public int getExtensionId() {
+        return base.getExtensionId();
     }
 
 }

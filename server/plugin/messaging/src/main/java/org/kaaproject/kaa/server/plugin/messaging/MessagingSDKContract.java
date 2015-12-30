@@ -15,23 +15,29 @@
  */
 package org.kaaproject.kaa.server.plugin.messaging;
 
+import org.kaaproject.kaa.common.dto.plugin.ContractType;
 import org.kaaproject.kaa.server.common.core.plugin.base.BasePluginContractDef;
 import org.kaaproject.kaa.server.common.core.plugin.base.BasePluginContractItemDef;
-import org.kaaproject.kaa.server.common.core.plugin.def.ContractType;
 import org.kaaproject.kaa.server.plugin.messaging.gen.ItemConfiguration;
 
 public class MessagingSDKContract {
 
     static BasePluginContractDef buildMessagingSDKContract() {
-        return BasePluginContractDef
-                .builder("Messaging SDK contract", 1)
+        return BasePluginContractDef.builder("Messaging SDK contract", 1)
                 .withType(ContractType.SDK)
-                .withItem(
-                        BasePluginContractItemDef.builder("sendMessage").withSchema(ItemConfiguration.SCHEMA$.toString())
-                                .withInMessage(SdkMessage.class).withOutMessage(SdkMessage.class).build())
-                .withItem(
-                        BasePluginContractItemDef.builder("receiveMessage").withSchema(ItemConfiguration.SCHEMA$.toString())
-                                .withInMessage(SdkMessage.class).withOutMessage(SdkMessage.class).build()).build();
+                .withItem(buildSendMsgDef())
+                .withItem(buildReceiveMsgDef())
+                .build();
+    }
+
+    static BasePluginContractItemDef buildReceiveMsgDef() {
+        return BasePluginContractItemDef.builder("receiveMessage").withSchema(ItemConfiguration.SCHEMA$.toString())
+                .withInMessage(SdkMessage.class).withOutMessage(SdkMessage.class).build();
+    }
+
+    static BasePluginContractItemDef buildSendMsgDef() {
+        return BasePluginContractItemDef.builder("sendMessage").withSchema(ItemConfiguration.SCHEMA$.toString())
+                .withInMessage(SdkMessage.class).withOutMessage(SdkMessage.class).build();
     }
 
 }

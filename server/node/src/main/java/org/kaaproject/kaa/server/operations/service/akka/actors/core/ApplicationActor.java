@@ -27,12 +27,18 @@ import java.util.UUID;
 
 import org.kaaproject.kaa.common.hash.EndpointObjectHash;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
+import org.kaaproject.kaa.server.common.thrift.gen.operations.Operation;
 import org.kaaproject.kaa.server.operations.service.akka.AkkaContext;
 import org.kaaproject.kaa.server.operations.service.akka.actors.supervision.SupervisionStrategyFactory;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.endpoint.EndpointAwareMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.endpoint.EndpointStopMessage;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.endpoint.ServerProfileUpdateMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.logs.LogEventPackMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.notification.ThriftNotificationMessage;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.plugin.EndpointExtMsg;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.plugin.PluginExtMsg;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.plugin.PluginMsg;
+import org.kaaproject.kaa.server.operations.service.akka.messages.core.plugin.SdkExtensionKey;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.stats.ApplicationActorStatusResponse;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.stats.StatusRequestMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.topic.NotificationMessage;
@@ -69,19 +75,23 @@ public class ApplicationActor extends UntypedActor {
     /** The Akka service context */
     private final AkkaContext context;
 
+    private final String applicationToken;
+
     /** The endpoint sessions. */
     private final Map<EndpointObjectHash, ActorMetaData> endpointSessions;
 
     private final Map<String, EndpointObjectHash> endpointActorMap;
 
-    /** The topic sessions. */
+    /** The topic actor sessions. */
     private final Map<String, ActorRef> topicSessions;
 
-    private final String applicationToken;
-
+    /** The log actor sessions. */
     private final Map<String, ActorRef> logsSessions;
 
+    /** The user verifier actor sessions. */
     private final Map<String, ActorRef> userVerifierSessions;
+
+    private final Map<SdkExtensionKey, String> pluginIdMap;
 
     private ActorRef applicationLogActor;
 
@@ -90,8 +100,10 @@ public class ApplicationActor extends UntypedActor {
     /**
      * Instantiates a new application actor.
      *
-     * @param context the context
-     * @param applicationToken the application token
+     * @param context
+     *            the context
+     * @param applicationToken
+     *            the application token
      */
     private ApplicationActor(AkkaContext context, String applicationToken) {
         this.context = context;
@@ -101,6 +113,7 @@ public class ApplicationActor extends UntypedActor {
         this.topicSessions = new HashMap<>();
         this.logsSessions = new HashMap<>();
         this.userVerifierSessions = new HashMap<>();
+        this.pluginIdMap = new HashMap<>();
         this.applicationLogActor = getOrCreateLogActor();
         this.userVerifierActor = getOrCreateUserVerifierActor();
     }
@@ -126,8 +139,10 @@ public class ApplicationActor extends UntypedActor {
         /**
          * Instantiates a new actor creator.
          *
-         * @param context the context
-         * @param applicationToken the application token
+         * @param context
+         *            the context
+         * @param applicationToken
+         *            the application token
          */
         public ActorCreator(AkkaContext context, String applicationToken) {
             super();
@@ -160,8 +175,9 @@ public class ApplicationActor extends UntypedActor {
         }
         if (message instanceof EndpointAwareMessage) {
             processEndpointAwareMessage((EndpointAwareMessage) message);
-        }
-        if (message instanceof SessionAware) {
+        } else if (message instanceof PluginMsg) {
+            processPluginMsg((PluginMsg) message);
+        } else if (message instanceof SessionAware) {
             processSessionAwareMessage((SessionAware) message);
         } else if (message instanceof EndpointEventDeliveryMessage) {
             processEndpointEventDeliveryMessage((EndpointEventDeliveryMessage) message);
@@ -182,6 +198,30 @@ public class ApplicationActor extends UntypedActor {
         } else if (message instanceof StatusRequestMessage) {
             processStatusRequest((StatusRequestMessage) message);
         }
+    }
+
+    private void processPluginMsg(PluginMsg msg) {
+        if (msg instanceof PluginExtMsg) {
+            processPluginExtMsg((PluginExtMsg) msg);
+        } else {
+            processEndpointExtMsg((EndpointExtMsg) msg);
+        }
+    }
+
+    private void processPluginExtMsg(PluginExtMsg msg) {
+        LOG.debug("[{}] Processing plugin message {}", applicationToken, msg);
+    }
+
+    private void processEndpointExtMsg(EndpointExtMsg msg) {
+        LOG.debug("[{}] Processing extension message {}", applicationToken, msg);
+        SdkExtensionKey pluginKey = msg.getExtKey();
+        String pluginId = pluginIdMap.get(pluginKey);
+        if (pluginId == null) {
+            pluginId = context.getCacheService().getPluginInstanceId(pluginKey);
+            pluginIdMap.put(pluginKey, pluginId);
+        }
+        LOG.debug("[{}] Going to forward this message to plugin with id [{}]", applicationToken, pluginId);
+        context().parent().tell(new PluginExtMsg(pluginId, msg), context().self());
     }
 
     /**
@@ -230,15 +270,17 @@ public class ApplicationActor extends UntypedActor {
         if (notification.isSetNotificationId()) {
             LOG.debug("[{}] Forwarding message to specific topic", applicationToken);
             sendToSpecificTopic(message);
-        } else if (notification.isSetUnicastNotificationId()) {
+        } else if (notification.isSetKeyHash()) {
             LOG.debug("[{}] Forwarding message to specific endpoint", applicationToken);
             sendToSpecificEndpoint(message);
         } else if (notification.isSetAppenderId()) {
             LOG.debug("[{}] Forwarding message to application log actor", applicationToken);
             processLogNotificationMessage(message);
         } else if (notification.isSetUserVerifierToken()) {
-            LOG.debug("[{}] Forwarding message to application log actor", applicationToken);
+            LOG.debug("[{}] Forwarding message to application user verifier actor", applicationToken);
             processUserVerifierNotificationMessage(message);
+        } else if (notification.getKeyHash() != null) {
+
         } else {
             LOG.debug("[{}] Broadcasting message to all endpoints", applicationToken);
             broadcastToAllEndpoints(message);
@@ -286,7 +328,12 @@ public class ApplicationActor extends UntypedActor {
         EndpointObjectHash keyHash = EndpointObjectHash.fromBytes(message.getNotification().getKeyHash());
         ActorMetaData endpointActor = endpointSessions.get(keyHash);
         if (endpointActor != null) {
-            endpointActor.actorRef.tell(NotificationMessage.fromUnicastId(message.getNotification().getUnicastNotificationId()), self());
+            if (message.getNotification().getOp() == Operation.UPDATE_SERVER_PROFILE) {
+                endpointActor.actorRef.tell(new ServerProfileUpdateMessage(), self());
+            } else {
+                endpointActor.actorRef
+                        .tell(NotificationMessage.fromUnicastId(message.getNotification().getUnicastNotificationId()), self());
+            }
         } else {
             LOG.debug("[{}] Can't find endpoint actor that corresponds to {} ", applicationToken, keyHash);
         }
