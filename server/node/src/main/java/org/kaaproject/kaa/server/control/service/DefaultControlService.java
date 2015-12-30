@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.avro.Schema;
 import org.apache.commons.codec.binary.Base64;
@@ -81,10 +82,8 @@ import org.kaaproject.kaa.common.dto.event.EventSchemaVersionDto;
 import org.kaaproject.kaa.common.dto.file.FileData;
 import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.common.dto.logs.LogSchemaDto;
-import org.kaaproject.kaa.common.dto.plugin.PluginContractDto;
 import org.kaaproject.kaa.common.dto.plugin.PluginDto;
 import org.kaaproject.kaa.common.dto.plugin.PluginInstanceDto;
-import org.kaaproject.kaa.common.dto.plugin.PluginInstanceState;
 import org.kaaproject.kaa.common.dto.user.UserVerifierDto;
 import org.kaaproject.kaa.common.hash.EndpointObjectHash;
 import org.kaaproject.kaa.server.admin.shared.endpoint.EndpointProfileViewDto;
@@ -100,6 +99,7 @@ import org.kaaproject.kaa.server.common.dao.EventClassService;
 import org.kaaproject.kaa.server.common.dao.LogAppendersService;
 import org.kaaproject.kaa.server.common.dao.LogSchemaService;
 import org.kaaproject.kaa.server.common.dao.NotificationService;
+import org.kaaproject.kaa.server.common.dao.PluginService;
 import org.kaaproject.kaa.server.common.dao.ProfileService;
 import org.kaaproject.kaa.server.common.dao.SdkProfileService;
 import org.kaaproject.kaa.server.common.dao.ServerProfileService;
@@ -230,6 +230,9 @@ public class DefaultControlService implements ControlService {
 
     @Autowired
     private CTLService ctlService;
+
+    @Autowired
+    private PluginService pluginService;
 
     /** The neighbor connections size. */
     @Value("#{properties[max_number_neighbor_connections]}")
@@ -2150,82 +2153,48 @@ public class DefaultControlService implements ControlService {
         }
     }
 
+    /**
+     * @deprecated TODO: Implement this method
+     */
     @Override
     public EndpointProfileViewDto getEndpointProfileViewDtoByEndpointKeyHash(String endpointProfileKeyHash) throws ControlServiceException {
-        // TODO Auto-generated method stub
+        // TODO: Implement this method
         return null;
+    }
+
+    @Override
+    public PluginDto getPluginByNameAndVersion(String name, Integer version) throws ControlServiceException {
+        return pluginService.findPluginByNameAndVersion(name, version);
+    }
+
+    @Override
+    public PluginDto getPluginByClassName(String className) throws ControlServiceException {
+        return pluginService.findPluginByClassName(className);
     }
 
     @Override
     public List<PluginDto> getPlugins() throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
+        return pluginService.findAllPlugins();
     }
 
     @Override
-    public PluginDto getPluginById(String pluginId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
+    public PluginInstanceDto getPluginInstanceById(String id) throws ControlServiceException {
+        return pluginService.findInstanceById(id);
     }
 
     @Override
-    public List<PluginInstanceDto> getPluginInstances(String applicationId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
+    public Set<PluginInstanceDto> getPluginInstancesByPluginId(String pluginId) throws ControlServiceException {
+        return pluginService.findInstancesByPluginId(pluginId);
     }
 
     @Override
-    public PluginInstanceDto getPluginInstanceById(String instanceId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
+    public PluginInstanceDto createPluginInstance(PluginInstanceDto pluginInstance) throws ControlServiceException {
+        return pluginService.saveInstance(pluginInstance);
     }
 
     @Override
-    public PluginInstanceDto createPluginInstance(PluginInstanceDto instance) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void deletePluginInstance(String instanceId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void setPluginInstanceState(String instanceId, PluginInstanceState state) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public List<PluginContractDto> getPluginContracts(String pluginInstanceId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PluginContractDto getPluginContractById(String pluginContractId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PluginContractDto editPluginContract(PluginContractDto pluginContract) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void addPluginContractToPluginInstance(String pluginInstanceId, PluginContractDto pluginContract) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void removePluginContractFromPluginInstance(String pluginInstanceId, String pluginContractId) throws ControlServiceException {
-        // TODO Auto-generated method stub
-        
+    public void deletePluginInstanceById(String id) throws ControlServiceException {
+        pluginService.removeInstanceById(id);
     }
 
 }

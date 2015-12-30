@@ -18,6 +18,7 @@ package org.kaaproject.kaa.server.control.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.avro.Schema;
 import org.kaaproject.avro.ui.shared.Fqn;
@@ -61,10 +62,8 @@ import org.kaaproject.kaa.common.dto.event.EventClassType;
 import org.kaaproject.kaa.common.dto.file.FileData;
 import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.common.dto.logs.LogSchemaDto;
-import org.kaaproject.kaa.common.dto.plugin.PluginContractDto;
 import org.kaaproject.kaa.common.dto.plugin.PluginDto;
 import org.kaaproject.kaa.common.dto.plugin.PluginInstanceDto;
-import org.kaaproject.kaa.common.dto.plugin.PluginInstanceState;
 import org.kaaproject.kaa.common.dto.user.UserVerifierDto;
 import org.kaaproject.kaa.server.admin.shared.endpoint.EndpointProfileViewDto;
 import org.kaaproject.kaa.server.control.service.exception.ControlServiceException;
@@ -1648,32 +1647,22 @@ public interface ControlService {
      * @throws ControlServiceException
      *             the control service exception
      */
+    SdkProfileDto findSdkProfileByToken(String sdkToken) throws ControlServiceException;
+
     EndpointProfileViewDto getEndpointProfileViewDtoByEndpointKeyHash(String endpointProfileKeyHash) throws ControlServiceException;
 
-    public List<PluginDto> getPlugins() throws ControlServiceException;
+    PluginDto getPluginByNameAndVersion(String name, Integer version) throws ControlServiceException;
 
-    public PluginDto getPluginById(String pluginId) throws ControlServiceException;
+    PluginDto getPluginByClassName(String className) throws ControlServiceException;
 
-    public List<PluginInstanceDto> getPluginInstances(String applicationId) throws ControlServiceException;
+    List<PluginDto> getPlugins() throws ControlServiceException;
 
-    public PluginInstanceDto getPluginInstanceById(String instanceId) throws ControlServiceException;
+    PluginInstanceDto getPluginInstanceById(String id) throws ControlServiceException;
 
-    public PluginInstanceDto createPluginInstance(PluginInstanceDto instance) throws ControlServiceException;
+    Set<PluginInstanceDto> getPluginInstancesByPluginId(String pluginId) throws ControlServiceException;
 
-    public void deletePluginInstance(String instanceId) throws ControlServiceException;
+    PluginInstanceDto createPluginInstance(PluginInstanceDto pluginInstance) throws ControlServiceException;
 
-    public void setPluginInstanceState(String instanceId, PluginInstanceState state) throws ControlServiceException;
-
-    public List<PluginContractDto> getPluginContracts(String pluginInstanceId) throws ControlServiceException;
-
-    public PluginContractDto getPluginContractById(String pluginContractId) throws ControlServiceException;
-
-    public PluginContractDto editPluginContract(PluginContractDto pluginContract) throws ControlServiceException;
-
-    public void addPluginContractToPluginInstance(String pluginInstanceId, PluginContractDto pluginContract) throws ControlServiceException;
-
-    public void removePluginContractFromPluginInstance(String pluginInstanceId, String pluginContractId) throws ControlServiceException;
-
-    public SdkProfileDto findSdkProfileByToken(String sdkToken) throws ControlServiceException;
+    void deletePluginInstanceById(String id) throws ControlServiceException;
 
 }
