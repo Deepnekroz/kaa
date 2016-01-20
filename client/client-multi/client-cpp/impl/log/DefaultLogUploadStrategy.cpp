@@ -32,7 +32,7 @@ const std::size_t DefaultLogUploadStrategy::DEFAULT_RETRY_PERIOD = 5 * 60;
 const std::size_t DefaultLogUploadStrategy::DEFAULT_UPLOAD_VOLUME_THRESHOLD = 8 * 1024;
 const std::size_t DefaultLogUploadStrategy::DEFAULT_UPLOAD_COUNT_THRESHOLD = 64;
 
-const std::size_t DefaultLogUploadStrategy::DEFAULT_MAX_PARALLEL_UPLOADS;
+const std::size_t DefaultLogUploadStrategy::DEFAULT_MAX_PARALLEL_UPLOADS = INT32_MAX;
 
 LogUploadStrategyDecision DefaultLogUploadStrategy::isUploadNeeded(ILogStorageStatus& status)
 {

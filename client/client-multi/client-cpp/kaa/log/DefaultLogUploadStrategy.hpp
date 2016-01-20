@@ -59,7 +59,8 @@ public:
         timeoutCheckPeriod_(DEFAULT_TIMEOUT_CHECK_PERIOD),
         logUploadCheckReriod_(DEFAULT_LOG_UPLOAD_CHECK_PERIOD),
         uploadVolumeThreshold_(DEFAULT_UPLOAD_VOLUME_THRESHOLD),
-        uploadCountThreshold_(DEFAULT_UPLOAD_COUNT_THRESHOLD)
+        uploadCountThreshold_(DEFAULT_UPLOAD_COUNT_THRESHOLD),
+        maxParallelUploads_(DEFAULT_MAX_PARALLEL_UPLOADS)
     {}
 
     virtual LogUploadStrategyDecision isUploadNeeded(ILogStorageStatus& status);
@@ -117,7 +118,7 @@ public:
     static const std::size_t DEFAULT_UPLOAD_COUNT_THRESHOLD/* = 64*/; /*!< The default value for the log count to initiate
                                                                        the log upload. */
 
-    static const std::size_t DEFAULT_MAX_PARALLEL_UPLOADS = INT32_MAX;  /*!< The default value for Max amount of log batches
+    static const std::size_t DEFAULT_MAX_PARALLEL_UPLOADS/* = INT32_MAX*/;  /*!< The default value for Max amount of log batches
                                                                              allowed to be uploaded parallel. */
 
 protected:
@@ -135,7 +136,7 @@ protected:
     std::size_t uploadVolumeThreshold_/* = DEFAULT_UPLOAD_VOLUME_THRESHOLD*/;
     std::size_t uploadCountThreshold_/* = DEFAULT_UPLOAD_COUNT_THRESHOLD*/;
 
-    std::size_t maxParallelUploads_ = DEFAULT_MAX_PARALLEL_UPLOADS;
+    std::size_t maxParallelUploads_/* = DEFAULT_MAX_PARALLEL_UPLOADS*/;
 
 private:
     typedef std::chrono::system_clock Clock;
