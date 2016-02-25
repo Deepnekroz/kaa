@@ -2194,6 +2194,16 @@ public class DefaultControlService implements ControlService {
         }
     }
 
+    @Override
+    public EndpointProfileDto saveEndpointProfile(EndpointProfileDto endpointProfile) throws ControlServiceException {
+        return this.endpointService.saveEndpointProfile(endpointProfile);
+    }
+
+    @Override
+    public void removeEndpointProfile(byte[] endpointKeyHash) throws ControlServiceException {
+        this.endpointService.removeEndpointProfileByKeyHash(endpointKeyHash);
+    }
+
     @PreDestroy
     public void onStop() {
         if (neighbors != null) {

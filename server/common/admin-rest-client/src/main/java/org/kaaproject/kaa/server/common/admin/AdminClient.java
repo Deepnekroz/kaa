@@ -1040,4 +1040,18 @@ public class AdminClient {
         return restTemplate.postForObject(url + "userProfile", userDto, UserDto.class);
     }
 
+    public String registerEndpoint(String sdkToken, String endpointKey, Integer serverProfileVersion, String serverProfileBody) throws Exception {
+        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
+        parameters.add("sdkToken", sdkToken);
+        parameters.add("endpointKey", endpointKey);
+        parameters.add("serverProfileVersion", serverProfileVersion);
+        parameters.add("serverProfileBody", serverProfileBody);
+        return this.restTemplate.postForObject(url + "registerEndpoint", parameters, String.class);
+    }
+
+    public void unregisterEndpoint(String endpointKeyHash) throws Exception {
+        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
+        parameters.add("endpointKeyHash", endpointKeyHash);
+        this.restTemplate.postForLocation(url + "unregisterEndpoint", parameters);
+    }
 }

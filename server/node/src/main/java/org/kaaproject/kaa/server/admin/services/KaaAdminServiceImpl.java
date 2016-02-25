@@ -35,6 +35,7 @@ import java.util.Set;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaParseException;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.StaleObjectStateException;
 import org.kaaproject.avro.ui.converter.CtlSource;
 import org.kaaproject.avro.ui.converter.FormAvroConverter;
@@ -95,6 +96,7 @@ import org.kaaproject.kaa.common.dto.logs.LogAppenderDto;
 import org.kaaproject.kaa.common.dto.logs.LogSchemaDto;
 import org.kaaproject.kaa.common.dto.plugin.PluginDto;
 import org.kaaproject.kaa.common.dto.user.UserVerifierDto;
+import org.kaaproject.kaa.common.hash.EndpointObjectHash;
 import org.kaaproject.kaa.server.admin.services.cache.CacheService;
 import org.kaaproject.kaa.server.admin.services.dao.PropertiesFacade;
 import org.kaaproject.kaa.server.admin.services.dao.UserFacade;
@@ -3519,4 +3521,93 @@ public class KaaAdminServiceImpl implements KaaAdminService, InitializingBean {
         }
     }
 
+    public String registerEndpoint(String sdkToken, String endpointKey, Integer serverProfileVersion, String serverProfileBody) throws KaaAdminServiceException {
+        this.checkAuthority(KaaAuthorityDto.TENANT_ADMIN, KaaAuthorityDto.TENANT_DEVELOPER, KaaAuthorityDto.TENANT_USER);
+        try {
+            // Check if the endpoint profile exists
+            String endpointKeyHash = EndpointObjectHash.fromSHA1(endpointKey).toString();
+            EndpointProfileDto endpointProfile = this.controlService.getEndpointProfileByKeyHash(endpointKeyHash);
+            if (endpointProfile != null) {
+                throw new IllegalArgumentException("The endpoint profile already exists!");
+            }
+
+            // Check if the SDK profile exists
+            if (StringUtils.isEmpty(sdkToken)) {
+                throw new IllegalArgumentException("The SDK token is empty!");
+            }
+            SdkProfileDto sdkProfile = this.controlService.findSdkProfileByToken(sdkToken);
+            if (sdkProfile == null) {
+                throw new NotFoundException("No SDK profile with the given SDK token found!");
+            }
+
+            // Check the access permissions
+            String applicationId = sdkProfile.getApplicationId();
+            this.checkApplicationId(applicationId);
+
+            // Check if the server-side profile schema exists (OPTIONAL)
+            if (serverProfileVersion != null && serverProfileBody != null) {
+                ServerProfileSchemaDto serverProfileSchema;
+                serverProfileSchema = this.controlService.getServerProfileSchemaByApplicationIdAndVersion(applicationId, serverProfileVersion);
+                if (serverProfileSchema == null) {
+                    throw new NotFoundException("No server-side profile schema found!");
+                }
+                // Check if the server-side profile schema body is valid
+                CTLSchemaDto core = this.controlService.getCTLSchemaById(serverProfileSchema.getCtlSchemaId());
+                Schema coreSchema = this.controlService.exportCTLSchemaFlatAsSchema(core);
+                try {
+                    new GenericAvroConverter<GenericRecord>(coreSchema).decodeJson(serverProfileBody);
+                } catch (Exception cause) {
+                    throw new IllegalArgumentException("Invalid server-side profile body!");
+                }
+            } else if (serverProfileVersion != null || serverProfileBody != null) {
+                String missingParameter = (serverProfileVersion == null ? "version" : "body");
+                String message = String.format("The server-side profile %s is empty!", missingParameter);
+                throw new IllegalArgumentException(message);
+            }
+
+            // Create the endpoint profile
+            endpointProfile = new EndpointProfileDto();
+            endpointProfile.setApplicationId(applicationId);
+            endpointProfile.setSdkToken(sdkToken);
+            endpointProfile.setEndpointKey(endpointKey.getBytes());
+            endpointProfile.setEndpointKeyHash(endpointKeyHash.getBytes());
+            if (serverProfileVersion != null) {
+                endpointProfile.setServerProfileVersion(serverProfileVersion);
+            }
+            if (serverProfileBody != null) {
+                endpointProfile.setServerProfileBody(serverProfileBody);
+            }
+
+            // Register the endpoint profile
+            endpointProfile = this.controlService.saveEndpointProfile(endpointProfile);
+            endpointKeyHash = Base64.encodeBytes(endpointProfile.getEndpointKeyHash(), Base64.URL_SAFE);
+            return endpointKeyHash;
+
+        } catch (Exception cause) {
+            throw Utils.handleException(cause);
+        }
+    }
+
+    public void unregisterEndpoint(String endpointKeyHash) throws KaaAdminServiceException {
+        this.checkAuthority(KaaAuthorityDto.TENANT_ADMIN, KaaAuthorityDto.TENANT_DEVELOPER, KaaAuthorityDto.TENANT_USER);
+        try {
+            // Get the endpoint profile
+            EndpointProfileDto endpointProfile = this.controlService.getEndpointProfileByKeyHash(endpointKeyHash);
+            Utils.checkNotNull(endpointProfile);
+
+            // Check the access permissions
+            String applicationId = endpointProfile.getApplicationId();
+            if (applicationId == null) {
+                SdkProfileDto sdkProfile = this.controlService.findSdkProfileByToken(endpointProfile.getSdkToken());
+                applicationId = sdkProfile.getApplicationId();
+            }
+            this.checkApplicationId(applicationId);
+
+            // Unregister the endpoint profile
+            this.controlService.removeEndpointProfile(endpointProfile.getEndpointKeyHash());
+
+        } catch (Exception cause) {
+            throw Utils.handleException(cause);
+        }
+    }
 }

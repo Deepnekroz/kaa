@@ -1669,4 +1669,23 @@ public interface ControlService {
      */
     public SdkProfileDto findSdkProfileByToken(String sdkToken) throws ControlServiceException;
 
+    /**
+     * Saves or updates the given endpoint profile.
+     *
+     * @param endpointProfile The endpoint profile
+     *
+     * @return The saved or updated endpoint profile
+     *
+     * @throws ControlServiceException - if an exception occures.
+     */
+    public EndpointProfileDto saveEndpointProfile(EndpointProfileDto endpointProfile) throws ControlServiceException;
+
+    /**
+     * Removes the endpoint profile from the database.
+     *
+     * @param endpointKeyHash The endpoint key hash
+     *
+     * @throws ControlServiceException - if an exception occures.
+     */
+    public void removeEndpointProfile(byte[] endpointKeyHash) throws ControlServiceException;
 }
