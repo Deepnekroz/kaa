@@ -93,7 +93,7 @@ public final class SdkProfile extends GenericModel<SdkProfileDto> implements Ser
     private Integer endpointCount = 0;
 
     @Column(name = SDK_PROFILE_VERIFY_ENDPOINT_CREDENTIALS)
-    private boolean verifyEndpointCredentials;
+    private Boolean verifyEndpointCredentials;
 
     public SdkProfile() {
     }
