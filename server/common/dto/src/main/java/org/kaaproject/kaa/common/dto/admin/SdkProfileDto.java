@@ -30,6 +30,7 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
     private String createdUsername;
     private Long createdTime;
     private Integer endpointCount = 0;
+    private Boolean verifyEndpointCredentials = false;
 
     public SdkProfileDto() {
         super();
@@ -40,7 +41,7 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
                             Integer logSchemaVersion,
                             List<String> aefMapIds,
                             String defaultVerifierToken, String applicationToken,
-                            String createdUsername, Long createdTime, String name) {
+                            String createdUsername, Long createdTime, String name, Boolean verifyEndpointCredentials) {
         super(configurationSchemaVersion, 
                 profileSchemaVersion, 
                 notificationSchemaVersion, 
@@ -51,6 +52,7 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
         this.applicationId = applicationId;
         this.createdUsername = createdUsername;
         this.createdTime = createdTime;
+        this.verifyEndpointCredentials = verifyEndpointCredentials;
     }
 
     public String getApplicationId() {
@@ -93,6 +95,14 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
         this.endpointCount = endpointCount;
     }
     
+    public Boolean getVerifyEndpointCredentials() {
+        return this.verifyEndpointCredentials;
+    }
+
+    public void setVerifyEndpointCredentials(Boolean verifyEndpointCredentials) {
+        this.verifyEndpointCredentials = verifyEndpointCredentials;
+    }
+
     @Override
     public String getId() {
         return id;
@@ -128,6 +138,7 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
                 + ((endpointCount == null) ? 0 : endpointCount.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((token == null) ? 0 : token.hashCode());
+        result = prime * result + ((verifyEndpointCredentials == null) ? 0 : verifyEndpointCredentials.hashCode());
         return result;
     }
 
@@ -185,6 +196,13 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
         } else if (!token.equals(other.token)) {
             return false;
         }
+        if (verifyEndpointCredentials == null) {
+            if (other.verifyEndpointCredentials != null) {
+                return false;
+            }
+        } else if (!verifyEndpointCredentials.equals(other.verifyEndpointCredentials)) {
+            return false;
+        }
         return true;
     }
 
@@ -203,6 +221,8 @@ public class SdkProfileDto extends SdkTokenDto implements HasId {
         builder.append(createdTime);
         builder.append(", endpointCount=");
         builder.append(endpointCount);
+        builder.append(", verifyEndpointCredentials=");
+        builder.append(verifyEndpointCredentials);
         builder.append("]");
         return builder.toString();
     }

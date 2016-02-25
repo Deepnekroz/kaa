@@ -28,10 +28,10 @@ import static org.kaaproject.kaa.server.common.dao.DaoConstants.SDK_PROFILE_NOTI
 import static org.kaaproject.kaa.server.common.dao.DaoConstants.SDK_PROFILE_PROFILE_SCHEMA_VERSION;
 import static org.kaaproject.kaa.server.common.dao.DaoConstants.SDK_PROFILE_TABLE_NAME;
 import static org.kaaproject.kaa.server.common.dao.DaoConstants.SDK_PROFILE_TOKEN;
+import static org.kaaproject.kaa.server.common.dao.DaoConstants.SDK_PROFILE_VERIFY_ENDPOINT_CREDENTIALS;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -41,13 +41,16 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.kaaproject.kaa.common.dto.admin.SdkProfileDto;
 
 @Entity
 @Table(name = SDK_PROFILE_TABLE_NAME)
-public class SdkProfile extends GenericModel<SdkProfileDto> implements Serializable {
+public final class SdkProfile extends GenericModel<SdkProfileDto> implements Serializable {
 
     private static final long serialVersionUID = -5963289882951330950L;
 
@@ -88,6 +91,9 @@ public class SdkProfile extends GenericModel<SdkProfileDto> implements Serializa
 
     @Column(name = SDK_PROFILE_ENDPOINT_COUNT)
     private Integer endpointCount = 0;
+
+    @Column(name = SDK_PROFILE_VERIFY_ENDPOINT_CREDENTIALS)
+    private boolean verifyEndpointCredentials;
 
     public SdkProfile() {
     }
@@ -135,6 +141,8 @@ public class SdkProfile extends GenericModel<SdkProfileDto> implements Serializa
                     dto.getAefMapIds().add(id);
                 }
             }
+
+            this.verifyEndpointCredentials = dto.getVerifyEndpointCredentials();
         }
     }
 
@@ -234,6 +242,14 @@ public class SdkProfile extends GenericModel<SdkProfileDto> implements Serializa
         this.endpointCount = endpointCount;
     }
 
+    public boolean isVerifyEndpointCredentials() {
+        return this.verifyEndpointCredentials;
+    }
+
+    public void setVerifyEndpointCredentials(boolean verifyEndpointCredentials) {
+        this.verifyEndpointCredentials = verifyEndpointCredentials;
+    }
+
     @Override
     protected SdkProfileDto createDto() {
         return new SdkProfileDto();
@@ -274,90 +290,25 @@ public class SdkProfile extends GenericModel<SdkProfileDto> implements Serializa
         dto.setCreatedTime(this.createdTime);
         dto.setEndpointCount(this.endpointCount);
 
+        dto.setVerifyEndpointCredentials(this.verifyEndpointCredentials);
+
         return dto;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        SdkProfile other = (SdkProfile) o;
-
-        if (application != null ? !application.equals(other.application) : other.application != null) {
-            return false;
-        }
-        if (token != null ? !token.equals(other.token) : other.token != null) {
-            return false;
-        }
-        if (name != null ? !name.equals(other.name) : other.name != null) {
-            return false;
-        }
-        if (configurationSchemaVersion != null ? !configurationSchemaVersion.equals(other.configurationSchemaVersion) : other.configurationSchemaVersion != null) {
-            return false;
-        }
-        if (profileSchemaVersion != null ? !profileSchemaVersion.equals(other.profileSchemaVersion) : other.profileSchemaVersion != null) {
-            return false;
-        }
-        if (notificationSchemaVersion != null ? !notificationSchemaVersion.equals(other.notificationSchemaVersion) : other.notificationSchemaVersion != null) {
-            return false;
-        }
-        if (logSchemaVersion != null ? !logSchemaVersion.equals(other.logSchemaVersion) : other.logSchemaVersion != null) {
-            return false;
-        }
-        if (aefMapIds != null ? !aefMapIds.equals(other.aefMapIds) : other.aefMapIds != null) {
-            return false;
-        }
-        if (defaultVerifierToken != null ? !defaultVerifierToken.equals(other.defaultVerifierToken) : other.defaultVerifierToken != null) {
-            return false;
-        }
-        if (createdUsername != null ? !createdUsername.equals(other.createdUsername) : other.createdUsername != null) {
-            return false;
-        }
-        if (createdTime != null ? !createdTime.equals(other.createdTime) : other.createdTime != null) {
-            return false;
-        }
-
-
-        return true;
+    public boolean equals(Object that) {
+        String[] ignored = new String[] { "endpointCount" };
+        return EqualsBuilder.reflectionEquals(this, that, ignored);
     }
 
     @Override
     public int hashCode() {
-        int result = token != null ? token.hashCode() : 0;
-        result = 31 * result + (application != null ? application.hashCode() : 0);
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (configurationSchemaVersion != null ? configurationSchemaVersion.hashCode() : 0);
-        result = 31 * result + (profileSchemaVersion != null ? profileSchemaVersion.hashCode() : 0);
-        result = 31 * result + (notificationSchemaVersion != null ? notificationSchemaVersion.hashCode() : 0);
-        result = 31 * result + (logSchemaVersion != null ? logSchemaVersion.hashCode() : 0);
-        result = 31 * result + (aefMapIds != null ? aefMapIds.hashCode() : 0);
-        result = 31 * result + (defaultVerifierToken != null ? defaultVerifierToken.hashCode() : 0);
-        result = 31 * result + (createdUsername != null ? createdUsername.hashCode() : 0);
-        result = 31 * result + (createdTime != null ? createdTime.hashCode() : 0);
-
-        return result;
+        String[] ignored = new String[] { "endpointCount" };
+        return HashCodeBuilder.reflectionHashCode(this, ignored);
     }
 
     @Override
     public String toString() {
-        return "SdkToken{" +
-                "token='" + token + '\'' +
-                ", application=" + application +
-                ", name=" + name +
-                ", configurationSchemaVersion=" + configurationSchemaVersion +
-                ", profileSchemaVersion=" + profileSchemaVersion +
-                ", notificationSchemaVersion=" + notificationSchemaVersion +
-                ", logSchemaVersion=" + logSchemaVersion +
-                ", aefMapIds=" + aefMapIds != null ? Arrays.toString(aefMapIds.toArray()) : null +
-                ", defaultVerifierToken=" + defaultVerifierToken +
-                ", createdUsername=" + createdUsername +
-                ", createdTime=" + createdTime +
-                ", endpointCount=" + endpointCount +
-                '}';
+        return ToStringBuilder.reflectionToString(this);
     }
 }

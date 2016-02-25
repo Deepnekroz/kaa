@@ -42,6 +42,7 @@ import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.text.shared.Renderer;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.DisclosurePanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
@@ -57,6 +58,7 @@ public class AddSdkProfileViewImpl extends BaseDetailsViewImpl implements AddSdk
     private static final String REQUIRED = Utils.avroUiStyle.requiredField();
 
     private SizedTextBox name;
+    private CheckBox verifyEndpointCredentials;
 
     private VersionListBox configurationSchemaVersion;
     private VersionListBox profileSchemaVersion;
@@ -73,7 +75,6 @@ public class AddSdkProfileViewImpl extends BaseDetailsViewImpl implements AddSdk
     private Button removeAefMapButton;
 
     private ValueListBox<UserVerifierDto> defaultUserVerifier;
-
 
     public AddSdkProfileViewImpl() {
         super(true);
@@ -92,6 +93,18 @@ public class AddSdkProfileViewImpl extends BaseDetailsViewImpl implements AddSdk
         name.addInputHandler(this);
         detailsTable.setWidget(row, 0, label);
         detailsTable.setWidget(row, 1, name);
+
+        ++row;
+        label = new Label(Utils.constants.verifyEndpointCredentials());
+        this.verifyEndpointCredentials = new CheckBox();
+        this.verifyEndpointCredentials.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+            @Override
+            public void onValueChange(ValueChangeEvent<Boolean> event) {
+                AddSdkProfileViewImpl.this.fireChanged();
+            }
+        });
+        this.detailsTable.setWidget(row, 0, label);
+        this.detailsTable.setWidget(row, 1, this.verifyEndpointCredentials);
 
         row++;
         label = new Label(Utils.constants.configurationSchemaVersion());
@@ -258,6 +271,11 @@ public class AddSdkProfileViewImpl extends BaseDetailsViewImpl implements AddSdk
     }
 
     @Override
+    public CheckBox getVerifyEndpointCredentials() {
+        return this.verifyEndpointCredentials;
+    }
+
+    @Override
     public ValueListBox<VersionDto> getConfigurationSchemaVersion() {
         return configurationSchemaVersion;
     }
@@ -298,6 +316,7 @@ public class AddSdkProfileViewImpl extends BaseDetailsViewImpl implements AddSdk
     @Override
     protected void resetImpl() {
         name.setValue("");
+        verifyEndpointCredentials.setValue(false);
         configurationSchemaVersion.reset();
         profileSchemaVersion.reset();
         notificationSchemaVersion.reset();
