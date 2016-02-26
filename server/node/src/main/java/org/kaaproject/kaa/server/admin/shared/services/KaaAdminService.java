@@ -419,5 +419,8 @@ public interface KaaAdminService extends RemoteService {
     
     public boolean testProfileFilter(RecordField endpointProfile, RecordField serverProfile, String filterBody) throws KaaAdminServiceException;
 
+    public String registerEndpoint(String sdkToken, String endpointKey, Integer serverProfileVersion, String serverProfileBody) throws KaaAdminServiceException;
+
+    public void unregisterEndpoint(String endpointKeyHash) throws KaaAdminServiceException;
     
 }

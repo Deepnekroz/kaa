@@ -2085,4 +2085,39 @@ public class KaaAdminController {
         }
     }
 
+    /**
+     * Registers an endpoint in Kaa and optionally assigns it a server-side
+     * profile.
+     *
+     * @param sdkToken The SDK token of the endpoint profile
+     * @param endpointKey The endpoint public key
+     * @param serverProfileVersion The version of the server-side profile schema
+     * @param serverProfileBody The body of the server-side profile schema
+     *
+     * @return The endpoint key hash
+     *
+     * @throws KaaAdminServiceException - if an exception occures.
+     */
+    @RequestMapping(value = "registerEndpoint", params = { "sdkToken", "endpointKey" },method = RequestMethod.POST)
+    @ResponseBody
+    public String registerEndpoint(
+            @RequestParam String sdkToken,
+            @RequestParam String endpointKey,
+            @RequestParam(required = false) Integer serverProfileVersion,
+            @RequestParam(required = false) String serverProfileBody)
+                    throws KaaAdminServiceException {
+
+        return this.kaaAdminService.registerEndpoint(sdkToken, endpointKey, serverProfileVersion, serverProfileBody);
+    }
+
+    /**
+     * Unregisters an endpoint by removing its profile from the database.
+     *
+     * @param endpointKeyHash The endpoint key hash
+     */
+    @RequestMapping(value = "unregisterEndpoint", params = { "endpointKeyHash" }, method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.OK)
+    public void unregisterEndpoint(String endpointKeyHash) throws KaaAdminServiceException {
+        this.kaaAdminService.unregisterEndpoint(endpointKeyHash);
+    }
 }

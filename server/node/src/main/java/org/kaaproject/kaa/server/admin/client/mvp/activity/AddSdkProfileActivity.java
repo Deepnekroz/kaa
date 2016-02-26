@@ -116,6 +116,8 @@ public class AddSdkProfileActivity extends AbstractDetailsActivity<SdkProfileDto
             List<AefMapInfoDto> aefMaps,
             List<UserVerifierDto> userVerifiers) {
 
+        detailsView.getVerifyEndpointCredentials().setValue(false);
+
         List<VersionDto> confSchemaVersions = schemaVersions.getConfigurationSchemaVersions();
         detailsView.getConfigurationSchemaVersion().setValue(getMaxSchemaVersions(confSchemaVersions));
         detailsView.getConfigurationSchemaVersion().setAcceptableValues(confSchemaVersions);
@@ -162,6 +164,9 @@ public class AddSdkProfileActivity extends AbstractDetailsActivity<SdkProfileDto
             entity.setDefaultVerifierToken(detailsView.getDefaultUserVerifier()
                     .getValue().getVerifierToken());
         }
+
+        boolean verifyEndpointCredentials = this.detailsView.getVerifyEndpointCredentials().getValue();
+        this.entity.setVerifyEndpointCredentials(verifyEndpointCredentials);
     }
 
     @Override
