@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.kaaproject.kaa.common.dto.ApplicationDto;
 import org.kaaproject.kaa.common.dto.ChangeDto;
 import org.kaaproject.kaa.common.dto.ChangeType;
@@ -178,7 +179,7 @@ public class ConcurrentCacheService implements CacheService {
     private final CacheTemporaryMemorizer<String, SdkProfileDto> sdkProfileMemorizer = new CacheTemporaryMemorizer<>();
 
     /** The endpoint key memorizer. */
-    private final CacheTemporaryMemorizer<EndpointObjectHash, PublicKey> endpointKeyMemorizer = new CacheTemporaryMemorizer<>();
+    private final CacheTemporaryMemorizer<EndpointObjectHash, Pair<PublicKey, SdkProfileDto>> endpointKeyMemorizer = new CacheTemporaryMemorizer<>();
 
     /** The merged configuration memorizer. */
     private final CacheTemporaryMemorizer<List<EndpointGroupStateDto>, BaseData> mergedConfigurationMemorizer = new CacheTemporaryMemorizer<>();
@@ -631,26 +632,34 @@ public class ConcurrentCacheService implements CacheService {
      */
     @Override
     @Cacheable(value="endpointKeys", unless="#result == null")
-    public PublicKey getEndpointKey(EndpointObjectHash key) {
-        return endpointKeyMemorizer.compute(key, new Computable<EndpointObjectHash, PublicKey>() {
+    public Pair<PublicKey, SdkProfileDto> getEndpointKeyAndSDKProfile(EndpointObjectHash key) {
+        return endpointKeyMemorizer.compute(key, new Computable<EndpointObjectHash, Pair<PublicKey, SdkProfileDto>>() {
 
             @Override
-            public PublicKey compute(EndpointObjectHash key) {
+            public Pair<PublicKey, SdkProfileDto> compute(EndpointObjectHash key) {
                 LOG.debug("Fetching result for getEndpointKey");
-                PublicKey result = null;
+                PublicKey publicKey = null;
                 EndpointProfileDto endpointProfile = endpointService.findEndpointProfileByKeyHash(key.getData());
                 if (endpointProfile != null) {
                     try {
                         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(endpointProfile.getEndpointKey());
                         KeyFactory keyFact = KeyFactory.getInstance(ALGORITHM);
-                        result = keyFact.generatePublic(x509KeySpec);
+                        publicKey = keyFact.generatePublic(x509KeySpec);
                     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                         LOG.error("failed to decode key", e);
                     }
                 } else {
                     LOG.error("failed to find key by hash {}", key);
                 }
-                return result;
+
+                LOG.debug("Fetching the SDK profile");
+                SdkProfileDto sdkProfile = ConcurrentCacheService.this.getSdkProfileBySdkToken(endpointProfile.getSdkToken());
+                if (sdkProfile == null) {
+                    LOG.error("Failed to find the SDK profile!");
+                }
+
+                // The return type is immutable by default
+                return Pair.of(publicKey, sdkProfile);
             }
         });
     }
