@@ -27,12 +27,13 @@ import java.util.concurrent.FutureTask;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.kaaproject.kaa.server.operations.service.cache.Computable;
 
-
 /**
  * The Class CacheTemporaryMemorizer.
  *
- * @param <K> the key type
- * @param <V> the value type
+ * @param <K>
+ *            the key type
+ * @param <V>
+ *            the value type
  */
 public class CacheTemporaryMemorizer<K, V> {
 
@@ -42,12 +43,14 @@ public class CacheTemporaryMemorizer<K, V> {
     /**
      * Compute.
      *
-     * @param key the key
-     * @param worker the worker
+     * @param key
+     *            the key
+     * @param worker
+     *            the worker
      * @return the v
      */
-    public V compute(final K key, final Computable<K, V> worker){
-        if(key == null) {
+    public V compute(final K key, final Computable<K, V> worker) {
+        if (key == null) {
             throw new InvalidParameterException("Cache key can't be null");
         }
         while (true) {
@@ -62,11 +65,14 @@ public class CacheTemporaryMemorizer<K, V> {
                 f = cache.putIfAbsent(key, ft);
                 if (f == null) {
                     f = ft;
-                    try{
+                    try {
                         ft.run();
-                        //the idea is not to cache permanently but only for the time of execution.
-                        //thus, technically, if time of calculation >> time of external cache put -> we will run calculation maximum 2 times.
-                    }finally{
+                        // the idea is not to cache permanently but only for the
+                        // time of execution.
+                        // thus, technically, if time of calculation >> time of
+                        // external cache put -> we will run calculation maximum
+                        // 2 times.
+                    } finally {
                         cache.remove(key, ft);
                     }
                 }
@@ -75,18 +81,18 @@ public class CacheTemporaryMemorizer<K, V> {
                 return f.get();
             } catch (CancellationException e) {
                 cache.remove(key, f);
-            } catch (ExecutionException|InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 throw launderThrowable(e);
             }
         }
     }
-    
+
     /**
      * Gets the cache size.
      *
      * @return the cache size
      */
-    public int getCacheSize(){
+    public int getCacheSize() {
         return cache.size();
     }
 
@@ -94,15 +100,16 @@ public class CacheTemporaryMemorizer<K, V> {
      * If the Throwable is an Error, throw it; if it is a RuntimeException
      * return it, otherwise throw IllegalStateException.
      *
-     * @param t the t
+     * @param t
+     *            the t
      * @return the runtime exception
      */
     public static RuntimeException launderThrowable(Throwable t) {
-        if (t instanceof RuntimeException){
+        if (t instanceof RuntimeException) {
             return (RuntimeException) t;
-        }else if (t instanceof Error){
+        } else if (t instanceof Error) {
             throw (Error) t;
-        }else{
+        } else {
             throw new IllegalStateException("Cache Operation Exception", t);
         }
     }

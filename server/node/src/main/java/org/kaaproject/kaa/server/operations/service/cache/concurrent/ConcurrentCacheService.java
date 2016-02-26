@@ -630,7 +630,7 @@ public class ConcurrentCacheService implements CacheService {
      * getEndpointKey(org.kaaproject.kaa.common.hash.EndpointObjectHash)
      */
     @Override
-    @Cacheable("endpointKeys")
+    @Cacheable(value="endpointKeys", unless="#result == null")
     public PublicKey getEndpointKey(EndpointObjectHash key) {
         return endpointKeyMemorizer.compute(key, new Computable<EndpointObjectHash, PublicKey>() {
 

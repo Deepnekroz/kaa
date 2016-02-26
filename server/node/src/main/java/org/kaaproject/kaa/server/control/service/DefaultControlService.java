@@ -1408,7 +1408,6 @@ public class DefaultControlService implements ControlService {
                 LOG.trace("Sending message {} to [{}]", nf, Neighbors.getServerID(server.getConnectionInfo()));
             }
             neighbors.sendMessage(server.getConnectionInfo(), OperationsServiceMsg.fromServerProfileUpdateMessage(nf));
-
         } else {
             LOG.warn("Can't find server for endpoint [{}]", endpointKeyHash);
         }
