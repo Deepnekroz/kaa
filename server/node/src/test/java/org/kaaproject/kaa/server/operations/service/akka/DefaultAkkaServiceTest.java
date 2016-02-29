@@ -245,9 +245,9 @@ public class DefaultAkkaServiceTest {
         Mockito.when(cacheService.getTenantIdByAppToken(APP_TOKEN)).thenReturn(TENANT_ID);
         Mockito.when(cacheService.getAppTokenBySdkToken(SDK_TOKEN)).thenReturn(APP_TOKEN);
         Mockito.when(cacheService.getAppTokenBySdkToken(INVALID_SDK_TOKEN)).thenReturn(null);
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(targetPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(targetPublicKeyHash.array())).getPublicKey())
                 .thenReturn(targetPair.getPublic());
 
         applicationDto = new ApplicationDto();
@@ -516,7 +516,7 @@ public class DefaultAkkaServiceTest {
         profileSync.setProfileBody(ByteBuffer.wrap(PROFILE_BODY.getBytes()));
         request.setProfileSyncRequest(profileSync);
 
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
         whenSync(simpleResponse);
 
@@ -548,7 +548,7 @@ public class DefaultAkkaServiceTest {
 
         SyncContext holder = simpleResponse;
 
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
         whenSync(holder);
 
@@ -580,7 +580,7 @@ public class DefaultAkkaServiceTest {
 
         SyncContext holder = simpleResponse;
 
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
         whenSync(holder);
 
@@ -614,7 +614,7 @@ public class DefaultAkkaServiceTest {
         md.setTimeout(1000l);
         request.setSyncRequestMetaData(md);
 
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
         whenSync(noDeltaResponse);
 
@@ -674,7 +674,7 @@ public class DefaultAkkaServiceTest {
         csRequest.setResyncOnly(true);
         request.setConfigurationSyncRequest(csRequest);
 
-        Mockito.when(cacheService.getEndpointKey(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
                 .thenReturn(clientPair.getPublic());
         whenSync(noDeltaResponse);
 

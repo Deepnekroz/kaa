@@ -644,15 +644,15 @@ public class ConcurrentCacheServiceTest extends AbstractTest {
 
     @Test
     public void testGetEndpointKey() throws GetDeltaException {
-        assertEquals(publicKey, cacheService.getEndpointKey(publicKeyHash));
+        assertEquals(publicKey, cacheService.getEndpointVerificationData(publicKeyHash).getPublicKey());
         verify(endpointService, times(1)).findEndpointProfileByKeyHash(publicKeyHash.getData());
         reset(endpointService);
 
-        assertEquals(publicKey, cacheService.getEndpointKey(publicKeyHash));
+        assertEquals(publicKey, cacheService.getEndpointVerificationData(publicKeyHash).getPublicKey());
         verify(endpointService, times(0)).findEndpointProfileByKeyHash(publicKeyHash.getData());
         reset(endpointService);
 
-        assertNull(cacheService.getEndpointKey(publicKeyHash2));
+        assertNull(cacheService.getEndpointVerificationData(publicKeyHash2).getPublicKey());
         verify(endpointService, times(1)).findEndpointProfileByKeyHash(publicKeyHash2.getData());
         reset(endpointService);
 
@@ -667,12 +667,12 @@ public class ConcurrentCacheServiceTest extends AbstractTest {
             }
         });
 
-        assertNull(cacheService.getEndpointKey(publicKeyHash2));
+        assertNull(cacheService.getEndpointVerificationData(publicKeyHash2).getPublicKey());
         verify(endpointService, times(0)).findEndpointProfileByKeyHash(publicKeyHash2.getData());
         reset(endpointService);
 
         cacheService.putEndpointKey(publicKeyHash2, publicKey2);
-        assertEquals(publicKey2, cacheService.getEndpointKey(publicKeyHash2));
+        assertEquals(publicKey2, cacheService.getEndpointVerificationData(publicKeyHash2).getPublicKey());
         verify(endpointService, times(0)).findEndpointProfileByKeyHash(publicKeyHash2.getData());
         reset(endpointService);
     }
@@ -683,7 +683,7 @@ public class ConcurrentCacheServiceTest extends AbstractTest {
             launchCodeInParallelThreads(STRESS_TEST_N_THREADS, new Runnable() {
                 @Override
                 public void run() {
-                    assertEquals(publicKey, cacheService.getEndpointKey(publicKeyHash));
+                    assertEquals(publicKey, cacheService.getEndpointVerificationData(publicKeyHash).getPublicKey());
                 }
             });
 

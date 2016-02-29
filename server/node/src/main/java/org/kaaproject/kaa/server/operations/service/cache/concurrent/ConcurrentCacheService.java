@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.kaaproject.kaa.common.dto.ApplicationDto;
 import org.kaaproject.kaa.common.dto.ChangeDto;
 import org.kaaproject.kaa.common.dto.ChangeType;
@@ -73,6 +72,7 @@ import org.kaaproject.kaa.server.operations.service.cache.Computable;
 import org.kaaproject.kaa.server.operations.service.cache.ConfigurationIdKey;
 import org.kaaproject.kaa.server.operations.service.cache.ConfigurationCacheEntry;
 import org.kaaproject.kaa.server.operations.service.cache.DeltaCacheKey;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFamilyIdKey;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFqnKey;
 import org.kaaproject.kaa.server.operations.service.cache.HistoryKey;
@@ -178,8 +178,8 @@ public class ConcurrentCacheService implements CacheService {
     /** The sdk properties memorized. */
     private final CacheTemporaryMemorizer<String, SdkProfileDto> sdkProfileMemorizer = new CacheTemporaryMemorizer<>();
 
-    /** The endpoint key memorizer. */
-    private final CacheTemporaryMemorizer<EndpointObjectHash, Pair<PublicKey, SdkProfileDto>> endpointKeyMemorizer = new CacheTemporaryMemorizer<>();
+    /** The endpoint verification data memorizer. */
+    private final CacheTemporaryMemorizer<EndpointObjectHash, EndpointVerificationData> endpointVerificationDataMemorizer = new CacheTemporaryMemorizer<>();
 
     /** The merged configuration memorizer. */
     private final CacheTemporaryMemorizer<List<EndpointGroupStateDto>, BaseData> mergedConfigurationMemorizer = new CacheTemporaryMemorizer<>();
@@ -628,38 +628,31 @@ public class ConcurrentCacheService implements CacheService {
      * (non-Javadoc)
      * 
      * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#
-     * getEndpointKey(org.kaaproject.kaa.common.hash.EndpointObjectHash)
+     * getEndpointVerificationData(org.kaaproject.kaa.common.hash.EndpointObjectHash)
      */
     @Override
-    @Cacheable(value="endpointKeys", unless="#result == null")
-    public Pair<PublicKey, SdkProfileDto> getEndpointKeyAndSDKProfile(EndpointObjectHash key) {
-        return endpointKeyMemorizer.compute(key, new Computable<EndpointObjectHash, Pair<PublicKey, SdkProfileDto>>() {
+    @Cacheable(value="endpointVerificationData", unless="#result == null")
+    public EndpointVerificationData getEndpointVerificationData(EndpointObjectHash key) {
+        return endpointVerificationDataMemorizer.compute(key, new Computable<EndpointObjectHash, EndpointVerificationData>() {
 
             @Override
-            public Pair<PublicKey, SdkProfileDto> compute(EndpointObjectHash key) {
-                LOG.debug("Fetching result for getEndpointKey");
-                PublicKey publicKey = null;
+            public EndpointVerificationData compute(EndpointObjectHash key) {
+                LOG.debug("Fetching result for getEndpointVerificationData");
+                EndpointVerificationData result = null;
                 EndpointProfileDto endpointProfile = endpointService.findEndpointProfileByKeyHash(key.getData());
                 if (endpointProfile != null) {
                     try {
                         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(endpointProfile.getEndpointKey());
                         KeyFactory keyFact = KeyFactory.getInstance(ALGORITHM);
-                        publicKey = keyFact.generatePublic(x509KeySpec);
+                        PublicKey publicKey = keyFact.generatePublic(x509KeySpec);
+                        result = new EndpointVerificationData(publicKey, endpointProfile.getApplicationId());
                     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                         LOG.error("failed to decode key", e);
                     }
                 } else {
                     LOG.error("failed to find key by hash {}", key);
                 }
-
-                LOG.debug("Fetching the SDK profile");
-                SdkProfileDto sdkProfile = ConcurrentCacheService.this.getSdkProfileBySdkToken(endpointProfile.getSdkToken());
-                if (sdkProfile == null) {
-                    LOG.error("Failed to find the SDK profile!");
-                }
-
-                // The return type is immutable by default
-                return Pair.of(publicKey, sdkProfile);
+                return result;
             }
         });
     }

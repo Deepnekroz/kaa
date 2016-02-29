@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.kaaproject.kaa.common.dto.admin.SdkProfileDto;
 import org.kaaproject.kaa.common.endpoint.security.KeyUtil;
 import org.kaaproject.kaa.common.endpoint.security.MessageEncoderDecoder;
@@ -34,6 +33,7 @@ import org.kaaproject.kaa.server.operations.service.akka.messages.core.endpoint.
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.response.NettySessionResponseMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.response.SessionResponse;
 import org.kaaproject.kaa.server.operations.service.cache.CacheService;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.metrics.MeterClient;
 import org.kaaproject.kaa.server.operations.service.metrics.MetricsService;
 import org.kaaproject.kaa.server.sync.ClientSync;
@@ -341,21 +341,21 @@ public class EncDecActorMessageProcessor {
             byte[] publicKeySrc = request.getProfileSync().getEndpointPublicKey().array();
             endpointKey = KeyUtil.getPublic(publicKeySrc);
 
-            // Get the SDK profile to check the verify endpoint credentials flag
+            EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(endpointKey.getEncoded());
+            EndpointVerificationData endpointVerificationData = this.cacheService.getEndpointVerificationData(endpointKeyHash);
+
             String sdkToken = this.getSdkToken(request);
             SdkProfileDto sdkProfile = this.cacheService.getSdkProfileBySdkToken(sdkToken);
 
-            // Verify the endpoint credentials
+            if (!Objects.equals(sdkProfile.getApplicationId(), endpointVerificationData.getApplicationId())) {
+                String message = "The endpoint is trying to connect with an SDK generated for a different application!";
+                LOG.error(message);
+                throw new GeneralSecurityException(message);
+            }
+
             if (Objects.equals(sdkProfile.getVerifyEndpointCredentials(), Boolean.TRUE)) {
-                EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(endpointKey.getEncoded());
-                Pair<PublicKey, SdkProfileDto> r = this.cacheService.getEndpointKeyAndSDKProfile(endpointKeyHash);
-                if (r.getLeft() == null) { // The endpoint profile must be already present in the database
+                if (endpointVerificationData.getPublicKey() == null) {
                     String message = "The endpoint profile is not registered in Kaa!";
-                    LOG.error(message);
-                    throw new GeneralSecurityException(message);
-                }
-                if (!Objects.equals(sdkProfile.getApplicationId(), r.getRight())){ // The SDK profiles must belong to the same application
-                    String message = "The endpoint is connecting with an SDK generated for a different application!";
                     LOG.error(message);
                     throw new GeneralSecurityException(message);
                 }
@@ -363,7 +363,7 @@ public class EncDecActorMessageProcessor {
         }
         if (endpointKey == null) {
             EndpointObjectHash hash = getEndpointObjectHash(request);
-            endpointKey = cacheService.getEndpointKeyAndSDKProfile(hash).getLeft();
+            endpointKey = cacheService.getEndpointVerificationData(hash).getPublicKey();
         }
         return endpointKey;
     }

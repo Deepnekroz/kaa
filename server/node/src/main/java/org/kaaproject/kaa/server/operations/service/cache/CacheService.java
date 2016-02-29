@@ -20,7 +20,6 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.kaaproject.kaa.common.dto.ConfigurationSchemaDto;
 import org.kaaproject.kaa.common.dto.EndpointConfigurationDto;
 import org.kaaproject.kaa.common.dto.EndpointGroupDto;
@@ -190,13 +189,14 @@ public interface CacheService {
     ConfigurationCacheEntry setDelta(DeltaCacheKey deltaKey, ConfigurationCacheEntry delta);
 
     /**
-     * Returns the endpoint public key and the corresponding SDK profile.
+     * Returns the endpoint public key and the corresponding SDK profile. This
+     * information is required for endpoint verification.
      *
      * @param endpointKeyHash The endpoint public key hash
      *
      * @return The endpoint public key and the corresponding SDK profile.
      */
-    Pair<PublicKey, SdkProfileDto> getEndpointKeyAndSDKProfile(EndpointObjectHash endpointKeyHash);
+    EndpointVerificationData getEndpointVerificationData(EndpointObjectHash endpointKeyHash);
 
     /**
      * Gets the EndpointClassFamily Id using tenant Id and name;
