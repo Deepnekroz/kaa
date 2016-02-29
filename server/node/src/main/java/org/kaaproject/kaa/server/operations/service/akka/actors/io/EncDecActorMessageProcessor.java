@@ -44,6 +44,7 @@ import org.kaaproject.kaa.server.sync.SyncStatus;
 import org.kaaproject.kaa.server.sync.platform.PlatformEncDec;
 import org.kaaproject.kaa.server.sync.platform.PlatformEncDecException;
 import org.kaaproject.kaa.server.sync.platform.PlatformLookup;
+import org.kaaproject.kaa.server.transport.EndpointNotRegisteredException;
 import org.kaaproject.kaa.server.transport.InvalidSDKTokenException;
 import org.kaaproject.kaa.server.transport.channel.ChannelContext;
 import org.kaaproject.kaa.server.transport.message.ErrorBuilder;
@@ -181,7 +182,7 @@ public class EncDecActorMessageProcessor {
     }
 
     private void processSignedRequest(ActorContext context, SessionInitMessage message) throws GeneralSecurityException,
-            PlatformEncDecException, InvalidSDKTokenException {
+            PlatformEncDecException, InvalidSDKTokenException, EndpointNotRegisteredException {
         ClientSync request = decodeRequest(message);
         EndpointObjectHash key = getEndpointObjectHash(request);
         String sdkToken = getSdkToken(request);
@@ -235,7 +236,7 @@ public class EncDecActorMessageProcessor {
         }
     }
 
-    private ClientSync decodeRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException, EndpointNotRegisteredException {
         ClientSync syncRequest = null;
         if (message.isEncrypted()) {
             syncRequest = decodeEncryptedRequest(message);
@@ -248,7 +249,7 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private ClientSync decodeEncryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeEncryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException, EndpointNotRegisteredException {
         byte[] requestRaw = crypt.decodeData(message.getEncodedMessageData(), message.getEncodedSessionKey());
         LOG.trace("Request data decrypted");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
@@ -270,7 +271,7 @@ public class EncDecActorMessageProcessor {
         return request;
     }
 
-    private ClientSync decodeUnencryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeUnencryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException, EndpointNotRegisteredException {
         byte[] requestRaw = message.getEncodedMessageData();
         LOG.trace("Try to convert raw data to SynRequest object");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
@@ -335,7 +336,7 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private PublicKey getPublicKey(ClientSync request) throws GeneralSecurityException {
+    private PublicKey getPublicKey(ClientSync request) throws GeneralSecurityException, EndpointNotRegisteredException {
         PublicKey endpointKey = null;
         if (request.getProfileSync() != null && request.getProfileSync().getEndpointPublicKey() != null) {
             byte[] publicKeySrc = request.getProfileSync().getEndpointPublicKey().array();
@@ -357,7 +358,7 @@ public class EncDecActorMessageProcessor {
                 if (endpointVerificationData.getPublicKey() == null) {
                     String message = "The endpoint profile is not registered in Kaa!";
                     LOG.error(message);
-                    throw new GeneralSecurityException(message);
+                    throw new EndpointNotRegisteredException(message);
                 }
             }
         }

@@ -35,8 +35,9 @@ public class ConnAck extends MqttFrame {
      *  REFUSE_BAD_PROTOCOL         0x02    Connection Refused: unacceptable protocol version
      *  REFUSE_ID_REJECT            0x03    Connection Refused: identifier rejected
      *  REFUSE_SERVER_UNAVAILABLE   0x04    Connection Refused: server unavailable
-     *  REFUSE_BAD_CREDENTIALS       0x05    Connection Refused: invalid authentication parameters
+     *  REFUSE_BAD_CREDENTIALS      0x05    Connection Refused: invalid authentication parameters
      *  REFUSE_NO_AUTH              0x06    Connection Refused: not authorized
+     *  REFUSE_NOT_REGISTERED       0x10    Connection Refused: endpoint not registered
      */
     public enum ReturnCode {
         ACCEPTED((byte)0x01),
@@ -45,6 +46,7 @@ public class ConnAck extends MqttFrame {
         REFUSE_SERVER_UNAVAILABLE((byte)0x04),
         REFUSE_BAD_CREDENTIALS((byte)0x05),
         REFUSE_NO_AUTH((byte)0x06),
+        REFUSE_NOT_REGISTERED((byte) 0x10),
         UNDEFINED((byte)0x07);
 
         private byte returnCode;
@@ -127,6 +129,8 @@ public class ConnAck extends MqttFrame {
             returnCode = ReturnCode.REFUSE_NO_AUTH;
         } else if(code == ReturnCode.REFUSE_SERVER_UNAVAILABLE.getReturnCode()) {
             returnCode = ReturnCode.REFUSE_SERVER_UNAVAILABLE;
+        } else if (code == ReturnCode.REFUSE_NOT_REGISTERED.getReturnCode()) {
+            this.returnCode = ReturnCode.REFUSE_NOT_REGISTERED;
         } else {
             returnCode = ReturnCode.UNDEFINED;
         }
