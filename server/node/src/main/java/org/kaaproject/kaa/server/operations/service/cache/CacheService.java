@@ -196,6 +196,14 @@ public interface CacheService {
      * @return The endpoint public key and the corresponding SDK profile.
      */
     EndpointVerificationData getEndpointVerificationData(EndpointObjectHash endpointKeyHash);
+    
+    /**
+     * Reset cache entry for corresponding endpoint key hash.
+     *
+     * @param endpointKeyHash The endpoint public key hash
+     *
+     */
+    void resetEndpointVerificationData(EndpointObjectHash endpointKeyHash);
 
     /**
      * Gets the EndpointClassFamily Id using tenant Id and name;
@@ -296,6 +304,13 @@ public interface CacheService {
      * @param key the key
      */
     void resetFilters(AppProfileVersionsKey key);
+    
+    /**
+     * Cache invalidate method.
+     *
+     * @param key the key
+     */    
+    void getAndCheckPublicKey(EndpointObjectHash key);
 
     /**
      * Cache invalidate method.

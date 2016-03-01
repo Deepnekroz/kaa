@@ -613,7 +613,7 @@ public class ConcurrentCacheService implements CacheService {
     }
 
     @Override
-    @Cacheable("sdkProperties")
+    @Cacheable(value = "sdkProperties", unless="#result == null")
     public SdkProfileDto getSdkProfileBySdkToken(String key) {
         return sdkProfileMemorizer.compute(key, new Computable<String, SdkProfileDto>() {
             @Override
@@ -649,6 +649,12 @@ public class ConcurrentCacheService implements CacheService {
                 return result;
             }
         });
+    }
+    
+    @Override
+    @CacheEvict(value = "endpointVerificationData", key = "#key")
+    public void resetEndpointVerificationData(EndpointObjectHash endpointKeyHash) {
+        LOG.debug("Cleanup cache record for {}", endpointKeyHash);
     }
 
     @Override
@@ -1018,6 +1024,12 @@ public class ConcurrentCacheService implements CacheService {
         default:
             return false;
         }
+    }
+
+    @Override
+    public void getAndCheckPublicKey(EndpointObjectHash key) {
+        // TODO Auto-generated method stub
+        
     }
 
 }
