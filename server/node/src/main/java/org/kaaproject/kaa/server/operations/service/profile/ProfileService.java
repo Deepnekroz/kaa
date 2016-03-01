@@ -45,6 +45,7 @@ public interface ProfileService {
      * Update profile.
      *
      * @param profile the profile
+     * @param mergeFunction The merge function
      * @return the updated endpoint profile dto
      */
     EndpointProfileDto updateProfile(EndpointProfileDto profile, BiFunction<EndpointProfileDto, EndpointProfileDto, EndpointProfileDto> mergeFunction);

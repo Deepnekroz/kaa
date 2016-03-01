@@ -42,7 +42,9 @@ public interface DeltaService {
 
     /**
      * Gets the up to date configuration for given endpoint profile
-     * 
+     *
+     * @param appToken The application token
+     * @param endpointKey The endpoint key
      * @param profile
      *            - endpoint profile
      * @return cache entry

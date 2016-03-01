@@ -2114,6 +2114,8 @@ public class KaaAdminController {
      * Unregisters an endpoint by removing its profile from the database.
      *
      * @param endpointKeyHash The endpoint key hash
+     *
+     * @throws KaaAdminServiceException - if an exception occures.
      */
     @RequestMapping(value = "unregisterEndpoint", params = { "endpointKeyHash" }, method = RequestMethod.POST)
     @ResponseStatus(HttpStatus.OK)

@@ -241,8 +241,8 @@ public interface CacheService {
     /**
      * Caches the given endpoint verification data.
      *
-     * @param key The endpoint key hash
-     * @param value The endpoint verification data
+     * @param endpointKeyHash The endpoint key hash
+     * @param endpointVerificationData The endpoint verification data
      *
      * @return The endpoint verification data cached
      */
