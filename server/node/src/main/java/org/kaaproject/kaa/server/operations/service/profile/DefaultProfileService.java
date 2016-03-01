@@ -17,6 +17,7 @@
 package org.kaaproject.kaa.server.operations.service.profile;
 
 import java.security.InvalidKeyException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -38,6 +39,7 @@ import org.kaaproject.kaa.server.operations.pojo.UpdateProfileRequest;
 import org.kaaproject.kaa.server.operations.service.cache.AppSeqNumber;
 import org.kaaproject.kaa.server.operations.service.cache.AppVersionKey;
 import org.kaaproject.kaa.server.operations.service.cache.CacheService;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFamilyIdKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,7 +149,9 @@ public class DefaultProfileService implements ProfileService {
             dto.setSequenceNumber(0);
 
             try {
-                cacheService.putEndpointKey(keyHash, KeyUtil.getPublic(dto.getEndpointKey()));
+                PublicKey publicKey = KeyUtil.getPublic(dto.getEndpointKey());
+                String applicationId = dto.getApplicationId();
+                cacheService.putEndpointVerificationData(keyHash, new EndpointVerificationData(publicKey, applicationId));
             } catch (InvalidKeyException e) {
                 LOG.error("Can't generate public key for endpoint key: {}. Reason: {}", dto.getEndpointKey(), e);
                 throw new RuntimeException(e);

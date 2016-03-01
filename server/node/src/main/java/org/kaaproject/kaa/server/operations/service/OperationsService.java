@@ -104,7 +104,7 @@ public interface OperationsService extends PublicKeyAware {
      * Update profile state based on new user configuration hash 
      * @param context - sync context that contains profile and other metadata
      * @param ucfHash - user configuration hash
-     * @return sync context
+     * @return The synchronization context
      */
     SyncContext syncUserConfigurationHash(SyncContext context, byte[] ucfHash);
 }

@@ -3589,19 +3589,9 @@ public class KaaAdminServiceImpl implements KaaAdminService, InitializingBean {
     public void unregisterEndpoint(String endpointKeyHash) throws KaaAdminServiceException {
         this.checkAuthority(KaaAuthorityDto.TENANT_ADMIN, KaaAuthorityDto.TENANT_DEVELOPER, KaaAuthorityDto.TENANT_USER);
         try {
-            // Get the endpoint profile
             EndpointProfileDto endpointProfile = this.controlService.getEndpointProfileByKeyHash(endpointKeyHash);
             Utils.checkNotNull(endpointProfile);
-
-            // Check the access permissions
-            String applicationId = endpointProfile.getApplicationId();
-            if (applicationId == null) {
-                SdkProfileDto sdkProfile = this.controlService.findSdkProfileByToken(endpointProfile.getSdkToken());
-                applicationId = sdkProfile.getApplicationId();
-            }
-            this.checkApplicationId(applicationId);
-
-            // Unregister the endpoint profile
+            this.checkApplicationId(endpointProfile.getApplicationId());
             this.controlService.removeEndpointProfile(endpointProfile);
         } catch (Exception cause) {
             throw Utils.handleException(cause);

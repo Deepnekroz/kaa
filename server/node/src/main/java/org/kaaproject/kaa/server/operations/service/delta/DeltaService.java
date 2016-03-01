@@ -48,7 +48,7 @@ public interface DeltaService {
      * @param endpointKey
      *            - the endpoint key
      * @param profile
-     *            - endpoint profile
+     *            - the endpoint profile
      * @return cache entry
      * @throws GetDeltaException
      *              the get delta exception

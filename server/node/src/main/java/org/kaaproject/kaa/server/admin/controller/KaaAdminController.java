@@ -2106,7 +2106,6 @@ public class KaaAdminController {
             @RequestParam(required = false) Integer serverProfileVersion,
             @RequestParam(required = false) String serverProfileBody)
                     throws KaaAdminServiceException {
-
         return this.kaaAdminService.registerEndpoint(sdkToken, endpointKey, serverProfileVersion, serverProfileBody);
     }
 
@@ -2114,7 +2113,7 @@ public class KaaAdminController {
      * Unregisters an endpoint by removing its profile from the database.
      *
      * @param endpointKeyHash The endpoint key hash
-     * 
+     *
      * @throws KaaAdminServiceException - if an exception occures.
      */
     @RequestMapping(value = "unregisterEndpoint", params = { "endpointKeyHash" }, method = RequestMethod.POST)

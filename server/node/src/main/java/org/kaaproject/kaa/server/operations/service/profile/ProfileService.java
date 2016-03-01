@@ -17,7 +17,6 @@
 package org.kaaproject.kaa.server.operations.service.profile;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import org.kaaproject.kaa.common.dto.EndpointProfileDto;
 import org.kaaproject.kaa.common.hash.EndpointObjectHash;

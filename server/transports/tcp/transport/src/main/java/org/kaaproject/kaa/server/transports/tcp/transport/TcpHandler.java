@@ -37,6 +37,7 @@ import org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.MessageType;
 import org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.MqttFrame;
 import org.kaaproject.kaa.common.channels.protocols.kaatcp.messages.SyncRequest;
 import org.kaaproject.kaa.server.common.server.NettyChannelContext;
+import org.kaaproject.kaa.server.transport.EndpointNotRegisteredException;
 import org.kaaproject.kaa.server.transport.InvalidSDKTokenException;
 import org.kaaproject.kaa.server.transport.channel.ChannelType;
 import org.kaaproject.kaa.server.transport.message.ErrorBuilder;
@@ -71,6 +72,8 @@ public class TcpHandler extends SimpleChannelInboundHandler<AbstractKaaTcpComman
             if (e instanceof GeneralSecurityException || e instanceof IOException ||
                     e instanceof IllegalArgumentException || e instanceof InvalidSDKTokenException) {
                 responses[0] = new ConnAck(ReturnCode.REFUSE_BAD_CREDENTIALS);
+            } if (e instanceof EndpointNotRegisteredException) {
+                responses[0] = new ConnAck(ReturnCode.REFUSE_NOT_REGISTERED);
             } else {
                 responses[0] = new ConnAck(ReturnCode.REFUSE_SERVER_UNAVAILABLE);
             }

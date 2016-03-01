@@ -16,7 +16,6 @@
 
 package org.kaaproject.kaa.server.operations.service.event;
 
-import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
@@ -51,6 +50,7 @@ import org.kaaproject.kaa.server.operations.service.cache.Computable;
 import org.kaaproject.kaa.server.operations.service.cache.ConfigurationIdKey;
 import org.kaaproject.kaa.server.operations.service.cache.ConfigurationCacheEntry;
 import org.kaaproject.kaa.server.operations.service.cache.DeltaCacheKey;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFamilyIdKey;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFqnKey;
 import org.kaaproject.kaa.server.operations.service.cache.HistoryKey;
@@ -150,10 +150,10 @@ public class ESTestCacheService implements CacheService {
     }
 
     /* (non-Javadoc)
-     * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#getEndpointKey(org.kaaproject.kaa.common.hash.EndpointObjectHash)
+     * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#getEndpointVerificationData(org.kaaproject.kaa.common.hash.EndpointObjectHash)
      */
     @Override
-    public PublicKey getEndpointKey(EndpointObjectHash hash) {
+    public EndpointVerificationData getEndpointVerificationData(EndpointObjectHash hash) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -186,11 +186,8 @@ public class ESTestCacheService implements CacheService {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#setEndpointKey(org.kaaproject.kaa.common.hash.EndpointObjectHash, java.security.PublicKey)
-     */
     @Override
-    public PublicKey putEndpointKey(EndpointObjectHash hash, PublicKey endpointKey) {
+    public EndpointVerificationData putEndpointVerificationData(EndpointObjectHash key, EndpointVerificationData value) {
         // TODO Auto-generated method stub
         return null;
     }

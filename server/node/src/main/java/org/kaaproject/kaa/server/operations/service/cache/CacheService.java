@@ -16,7 +16,6 @@
 
 package org.kaaproject.kaa.server.operations.service.cache;
 
-import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
@@ -189,12 +188,14 @@ public interface CacheService {
     ConfigurationCacheEntry setDelta(DeltaCacheKey deltaKey, ConfigurationCacheEntry delta);
 
     /**
-     * Gets the endpoint key.
+     * Returns the endpoint public key and the corresponding SDK profile. This
+     * information is required for endpoint verification.
      *
-     * @param hash the hash
-     * @return the endpoint key
+     * @param endpointKeyHash The endpoint public key hash
+     *
+     * @return The endpoint public key and the corresponding SDK profile.
      */
-    PublicKey getEndpointKey(EndpointObjectHash hash);
+    EndpointVerificationData getEndpointVerificationData(EndpointObjectHash endpointKeyHash);
 
     /**
      * Gets the EndpointClassFamily Id using tenant Id and name;
@@ -238,14 +239,14 @@ public interface CacheService {
 	Set<RouteTableKey> getRouteKeys(EventClassFqnVersion eventClassVersion);
 
     /**
-     * Sets the endpoint key.
+     * Caches the given endpoint verification data.
      *
-     * @param hash the hash
-     * @param endpointKey the endpoint key
+     * @param endpointKeyHash The endpoint key hash
+     * @param endpointVerificationData The endpoint verification data
      *
-     * @return cached endpoint key
+     * @return The endpoint verification data cached
      */
-    PublicKey putEndpointKey(EndpointObjectHash hash, PublicKey endpointKey);
+    EndpointVerificationData putEndpointVerificationData(EndpointObjectHash endpointKeyHash, EndpointVerificationData endpointVerificationData);
 
     /**
      * Setter for test purpose only.

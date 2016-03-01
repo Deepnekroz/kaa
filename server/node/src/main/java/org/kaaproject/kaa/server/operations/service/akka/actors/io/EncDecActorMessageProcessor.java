@@ -20,8 +20,10 @@ import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
+import org.kaaproject.kaa.common.dto.admin.SdkProfileDto;
 import org.kaaproject.kaa.common.endpoint.security.KeyUtil;
 import org.kaaproject.kaa.common.endpoint.security.MessageEncoderDecoder;
 import org.kaaproject.kaa.common.hash.EndpointObjectHash;
@@ -31,6 +33,7 @@ import org.kaaproject.kaa.server.operations.service.akka.messages.core.endpoint.
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.response.NettySessionResponseMessage;
 import org.kaaproject.kaa.server.operations.service.akka.messages.io.response.SessionResponse;
 import org.kaaproject.kaa.server.operations.service.cache.CacheService;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.metrics.MeterClient;
 import org.kaaproject.kaa.server.operations.service.metrics.MetricsService;
 import org.kaaproject.kaa.server.sync.ClientSync;
@@ -41,6 +44,7 @@ import org.kaaproject.kaa.server.sync.SyncStatus;
 import org.kaaproject.kaa.server.sync.platform.PlatformEncDec;
 import org.kaaproject.kaa.server.sync.platform.PlatformEncDecException;
 import org.kaaproject.kaa.server.sync.platform.PlatformLookup;
+import org.kaaproject.kaa.server.transport.EndpointNotRegisteredException;
 import org.kaaproject.kaa.server.transport.InvalidSDKTokenException;
 import org.kaaproject.kaa.server.transport.channel.ChannelContext;
 import org.kaaproject.kaa.server.transport.message.ErrorBuilder;
@@ -178,7 +182,7 @@ public class EncDecActorMessageProcessor {
     }
 
     private void processSignedRequest(ActorContext context, SessionInitMessage message) throws GeneralSecurityException,
-            PlatformEncDecException, InvalidSDKTokenException {
+            PlatformEncDecException, InvalidSDKTokenException, EndpointNotRegisteredException {
         ClientSync request = decodeRequest(message);
         EndpointObjectHash key = getEndpointObjectHash(request);
         String sdkToken = getSdkToken(request);
@@ -232,7 +236,8 @@ public class EncDecActorMessageProcessor {
         }
     }
 
-    private ClientSync decodeRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeRequest(SessionInitMessage message)
+            throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException, PlatformEncDecException {
         ClientSync syncRequest = null;
         if (message.isEncrypted()) {
             syncRequest = decodeEncryptedRequest(message);
@@ -245,7 +250,8 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private ClientSync decodeEncryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeEncryptedRequest(SessionInitMessage message)
+            throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException, PlatformEncDecException {
         byte[] requestRaw = crypt.decodeData(message.getEncodedMessageData(), message.getEncodedSessionKey());
         LOG.trace("Request data decrypted");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
@@ -267,7 +273,8 @@ public class EncDecActorMessageProcessor {
         return request;
     }
 
-    private ClientSync decodeUnencryptedRequest(SessionInitMessage message) throws GeneralSecurityException, PlatformEncDecException {
+    private ClientSync decodeUnencryptedRequest(SessionInitMessage message)
+            throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException, PlatformEncDecException {
         byte[] requestRaw = message.getEncodedMessageData();
         LOG.trace("Try to convert raw data to SynRequest object");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
@@ -332,15 +339,41 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private PublicKey getPublicKey(ClientSync request) throws GeneralSecurityException {
+    private PublicKey getPublicKey(ClientSync request) throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException {
         PublicKey endpointKey = null;
         if (request.getProfileSync() != null && request.getProfileSync().getEndpointPublicKey() != null) {
             byte[] publicKeySrc = request.getProfileSync().getEndpointPublicKey().array();
             endpointKey = KeyUtil.getPublic(publicKeySrc);
+
+            EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(endpointKey.getEncoded());
+            EndpointVerificationData endpointVerificationData = this.cacheService.getEndpointVerificationData(endpointKeyHash);
+
+            String sdkToken = this.getSdkToken(request);
+            if (this.isSDKTokenValid(sdkToken) == false) {
+                String message = "Invalid SDK token [{}] received";
+                LOG.error(message);
+                throw new InvalidSDKTokenException();
+            }
+            SdkProfileDto sdkProfile = this.cacheService.getSdkProfileBySdkToken(sdkToken);
+
+            if (Objects.equals(sdkProfile.getVerifyEndpointCredentials(), Boolean.TRUE)) {
+                if (endpointVerificationData == null || endpointVerificationData.getPublicKey() == null) {
+                    String message = "The endpoint profile is not registered in Kaa!";
+                    LOG.error(message);
+                    throw new EndpointNotRegisteredException(message);
+                }
+            }
+
+            if (endpointVerificationData != null && !Objects.equals(sdkProfile.getApplicationId(), endpointVerificationData.getApplicationId())) {
+                String message = "The endpoint is trying to connect with an SDK generated for a different application!";
+                LOG.error(message);
+                throw new GeneralSecurityException(message);
+            }
         }
         if (endpointKey == null) {
+            // TODO: Verify endpoint credentials
             EndpointObjectHash hash = getEndpointObjectHash(request);
-            endpointKey = cacheService.getEndpointKey(hash);
+            endpointKey = cacheService.getEndpointVerificationData(hash).getPublicKey();
         }
         return endpointKey;
     }
