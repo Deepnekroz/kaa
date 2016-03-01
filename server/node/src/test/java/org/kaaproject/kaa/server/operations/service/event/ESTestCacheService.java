@@ -16,7 +16,6 @@
 
 package org.kaaproject.kaa.server.operations.service.event;
 
-import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
@@ -187,11 +186,8 @@ public class ESTestCacheService implements CacheService {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#setEndpointKey(org.kaaproject.kaa.common.hash.EndpointObjectHash, java.security.PublicKey)
-     */
     @Override
-    public PublicKey putEndpointKey(EndpointObjectHash hash, PublicKey endpointKey) {
+    public EndpointVerificationData putEndpointVerificationData(EndpointObjectHash key, EndpointVerificationData value) {
         // TODO Auto-generated method stub
         return null;
     }

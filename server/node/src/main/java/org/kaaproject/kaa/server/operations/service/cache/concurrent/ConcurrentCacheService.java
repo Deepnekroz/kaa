@@ -624,12 +624,6 @@ public class ConcurrentCacheService implements CacheService {
         });
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.kaaproject.kaa.server.operations.service.cache.CacheService#
-     * getEndpointVerificationData(org.kaaproject.kaa.common.hash.EndpointObjectHash)
-     */
     @Override
     @Cacheable(value="endpointVerificationData", unless="#result == null")
     public EndpointVerificationData getEndpointVerificationData(EndpointObjectHash key) {
@@ -773,19 +767,10 @@ public class ConcurrentCacheService implements CacheService {
         });
     }
 
-    /**
-     * Put endpoint key.
-     *
-     * @param key
-     *            the key
-     * @param endpointKey
-     *            the endpoint key
-     * @return the public key
-     */
     @Override
-    @CachePut(value = "endpointKeys", key = "#key")
-    public PublicKey putEndpointKey(EndpointObjectHash key, PublicKey endpointKey) {
-        return endpointKey;
+    @CachePut(value = "endpointVerificationData", key = "#key")
+    public EndpointVerificationData putEndpointVerificationData(EndpointObjectHash key, EndpointVerificationData value) {
+        return value;
     }
 
     /*

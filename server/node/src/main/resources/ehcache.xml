@@ -122,7 +122,7 @@
         <persistence strategy="localTempSwap" />
     </cache>
 
-    <cache name="endpointKeys" maxEntriesLocalHeap="100000"
+    <cache name="endpointVerificationData" maxEntriesLocalHeap="100000"
         eternal="false" diskSpoolBufferSizeMB="20" timeToIdleSeconds="300"
         timeToLiveSeconds="600" memoryStoreEvictionPolicy="LRU"
         transactionalMode="off" statistics="true">

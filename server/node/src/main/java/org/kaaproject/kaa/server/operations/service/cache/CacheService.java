@@ -16,7 +16,6 @@
 
 package org.kaaproject.kaa.server.operations.service.cache;
 
-import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
@@ -240,14 +239,14 @@ public interface CacheService {
 	Set<RouteTableKey> getRouteKeys(EventClassFqnVersion eventClassVersion);
 
     /**
-     * Sets the endpoint key.
+     * Caches the given endpoint verification data.
      *
-     * @param hash the hash
-     * @param endpointKey the endpoint key
+     * @param key The endpoint key hash
+     * @param value The endpoint verification data
      *
-     * @return cached endpoint key
+     * @return The endpoint verification data cached
      */
-    PublicKey putEndpointKey(EndpointObjectHash hash, PublicKey endpointKey);
+    EndpointVerificationData putEndpointVerificationData(EndpointObjectHash endpointKeyHash, EndpointVerificationData endpointVerificationData);
 
     /**
      * Setter for test purpose only.

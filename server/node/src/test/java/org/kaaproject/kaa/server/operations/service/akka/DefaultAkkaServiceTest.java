@@ -44,6 +44,7 @@ import org.kaaproject.kaa.common.dto.EventClassFamilyVersionStateDto;
 import org.kaaproject.kaa.common.dto.NotificationDto;
 import org.kaaproject.kaa.common.dto.NotificationTypeDto;
 import org.kaaproject.kaa.common.dto.ServerProfileSchemaDto;
+import org.kaaproject.kaa.common.dto.admin.SdkProfileDto;
 import org.kaaproject.kaa.common.dto.ctl.CTLSchemaDto;
 import org.kaaproject.kaa.common.dto.logs.LogSchemaDto;
 import org.kaaproject.kaa.common.dto.user.UserVerifierDto;
@@ -92,6 +93,7 @@ import org.kaaproject.kaa.server.operations.service.akka.messages.core.route.Rou
 import org.kaaproject.kaa.server.operations.service.akka.messages.core.route.ThriftEndpointActorMsg;
 import org.kaaproject.kaa.server.operations.service.cache.AppVersionKey;
 import org.kaaproject.kaa.server.operations.service.cache.CacheService;
+import org.kaaproject.kaa.server.operations.service.cache.EndpointVerificationData;
 import org.kaaproject.kaa.server.operations.service.cache.EventClassFqnKey;
 import org.kaaproject.kaa.server.operations.service.cluster.ClusterService;
 import org.kaaproject.kaa.server.operations.service.event.EndpointEvent;
@@ -242,13 +244,20 @@ public class DefaultAkkaServiceTest {
 
         targetPublicKeyHash = ByteBuffer.wrap(SHA1HashUtils.hashToBytes(targetPair.getPublic().getEncoded()));
 
+        // An insecure SDK profile mock
+        SdkProfileDto sdkProfile = new SdkProfileDto();
+        sdkProfile.setApplicationId(APP_ID);
+        sdkProfile.setApplicationToken(APP_TOKEN);
+        sdkProfile.setToken(SDK_TOKEN);
+        Mockito.when(this.cacheService.getSdkProfileBySdkToken(SDK_TOKEN)).thenReturn(sdkProfile);
+
         Mockito.when(cacheService.getTenantIdByAppToken(APP_TOKEN)).thenReturn(TENANT_ID);
         Mockito.when(cacheService.getAppTokenBySdkToken(SDK_TOKEN)).thenReturn(APP_TOKEN);
         Mockito.when(cacheService.getAppTokenBySdkToken(INVALID_SDK_TOKEN)).thenReturn(null);
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(targetPublicKeyHash.array())).getPublicKey())
-                .thenReturn(targetPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(targetPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(targetPair.getPublic(), APP_ID));
 
         applicationDto = new ApplicationDto();
         applicationDto.setId(APP_ID);
@@ -516,8 +525,8 @@ public class DefaultAkkaServiceTest {
         profileSync.setProfileBody(ByteBuffer.wrap(PROFILE_BODY.getBytes()));
         request.setProfileSyncRequest(profileSync);
 
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
         whenSync(simpleResponse);
 
         MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
@@ -548,8 +557,8 @@ public class DefaultAkkaServiceTest {
 
         SyncContext holder = simpleResponse;
 
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
         whenSync(holder);
 
         MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
@@ -580,8 +589,8 @@ public class DefaultAkkaServiceTest {
 
         SyncContext holder = simpleResponse;
 
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
         whenSync(holder);
 
         Assert.assertNotNull(akkaService.getActorSystem());
@@ -614,8 +623,8 @@ public class DefaultAkkaServiceTest {
         md.setTimeout(1000l);
         request.setSyncRequestMetaData(md);
 
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
         whenSync(noDeltaResponse);
 
         MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
@@ -674,8 +683,8 @@ public class DefaultAkkaServiceTest {
         csRequest.setResyncOnly(true);
         request.setConfigurationSyncRequest(csRequest);
 
-        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())).getPublicKey())
-                .thenReturn(clientPair.getPublic());
+        Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
+                .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
         whenSync(noDeltaResponse);
 
         MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
