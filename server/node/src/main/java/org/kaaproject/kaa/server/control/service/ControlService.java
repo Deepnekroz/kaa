@@ -1683,9 +1683,9 @@ public interface ControlService {
     /**
      * Removes the endpoint profile from the database.
      *
-     * @param endpointKeyHash The endpoint key hash
+     * @param endpointProfile The endpoint profile
      *
      * @throws ControlServiceException - if an exception occures.
      */
-    public void removeEndpointProfile(byte[] endpointKeyHash) throws ControlServiceException;
+    public void removeEndpointProfile(EndpointProfileDto endpointProfile) throws ControlServiceException;
 }

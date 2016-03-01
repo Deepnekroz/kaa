@@ -3546,8 +3546,7 @@ public class KaaAdminServiceImpl implements KaaAdminService, InitializingBean {
 
             // Check if the server-side profile schema exists (OPTIONAL)
             if (serverProfileVersion != null && serverProfileBody != null) {
-                ServerProfileSchemaDto serverProfileSchema;
-                serverProfileSchema = this.controlService.getServerProfileSchemaByApplicationIdAndVersion(applicationId, serverProfileVersion);
+                ServerProfileSchemaDto serverProfileSchema = this.controlService.getServerProfileSchemaByApplicationIdAndVersion(applicationId, serverProfileVersion);
                 if (serverProfileSchema == null) {
                     throw new NotFoundException("No server-side profile schema found!");
                 }
@@ -3582,7 +3581,6 @@ public class KaaAdminServiceImpl implements KaaAdminService, InitializingBean {
             endpointProfile = this.controlService.saveEndpointProfile(endpointProfile);
             endpointKeyHash = Base64.encodeBytes(endpointProfile.getEndpointKeyHash(), Base64.URL_SAFE);
             return endpointKeyHash;
-
         } catch (Exception cause) {
             throw Utils.handleException(cause);
         }
@@ -3604,8 +3602,7 @@ public class KaaAdminServiceImpl implements KaaAdminService, InitializingBean {
             this.checkApplicationId(applicationId);
 
             // Unregister the endpoint profile
-            this.controlService.removeEndpointProfile(endpointProfile.getEndpointKeyHash());
-
+            this.controlService.removeEndpointProfile(endpointProfile);
         } catch (Exception cause) {
             throw Utils.handleException(cause);
         }

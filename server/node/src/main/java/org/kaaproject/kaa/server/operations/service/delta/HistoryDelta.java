@@ -40,6 +40,8 @@ public class HistoryDelta {
      *            the configuration changed
      * @param topicListChanged
      *            the topic list changed
+     * @param seqNumberChanged
+     *            the sequence number changed
      */
     public HistoryDelta(List<EndpointGroupStateDto> endpointGroupStates, boolean configurationChanged, boolean topicListChanged,
             boolean seqNumberChanged) {

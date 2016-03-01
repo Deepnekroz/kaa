@@ -208,8 +208,10 @@ struct ThriftEntityAddress {
   4: binary entityId
 }
 
-struct ThriftActorClassifier {
-  1: bool globalActor
+enum ThriftActorClassifier {
+      LOCAL = 1;
+      GLOBAL = 2;
+      APPLICATION = 3;
 }
 
 struct ThriftEntityClusterAddress {
@@ -229,6 +231,11 @@ struct ThriftUnicastNotificationMessage {
 }
 
 struct ThriftServerProfileUpdateMessage {
+  1: ThriftEntityAddress address
+  2: ThriftActorClassifier actorClassifier
+}
+
+struct ThriftEndpointDeregistrationMessage {
   1: ThriftEntityAddress address
   2: ThriftActorClassifier actorClassifier
 }
@@ -268,6 +275,11 @@ service OperationsThriftService {
 /**
 *  Interface to send server profile update message
 */
-  void onServerProfileUpdate(1: ThriftServerProfileUpdateMessage message);  
-    
+  void onServerProfileUpdate(1: ThriftServerProfileUpdateMessage message);
+
+/**
+*  Interface to send server profile update message
+*/
+  void onEndpointDeregistration(1: ThriftEndpointDeregistrationMessage message);
+
 }

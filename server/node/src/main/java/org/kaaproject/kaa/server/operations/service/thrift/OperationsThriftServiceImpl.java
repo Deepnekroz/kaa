@@ -30,6 +30,7 @@ import org.kaaproject.kaa.server.common.thrift.gen.operations.Message;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.Notification;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.OperationsThriftService;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.RedirectionRule;
+import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftEndpointDeregistrationMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftEntityRouteMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftServerProfileUpdateMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftUnicastNotificationMessage;
@@ -80,7 +81,7 @@ public class OperationsThriftServiceImpl implements OperationsThriftService.Ifac
     /** The event service */
     @Autowired
     EventService eventService;
-    
+
     @Autowired
     ClusterService clusterService;
 
@@ -128,9 +129,8 @@ public class OperationsThriftServiceImpl implements OperationsThriftService.Ifac
     @Override
     public void sendUserConfigurationUpdates(List<UserConfigurationUpdate> updates) throws TException {
         for (UserConfigurationUpdate update : updates) {
-            akkaService
-                    .onUserConfigurationUpdate(org.kaaproject.kaa.server.operations.service.akka.messages.core.user.UserConfigurationUpdate
-                            .fromThrift(update));
+            akkaService.onUserConfigurationUpdate(
+                    org.kaaproject.kaa.server.operations.service.akka.messages.core.user.UserConfigurationUpdate.fromThrift(update));
         }
     }
 
@@ -146,10 +146,10 @@ public class OperationsThriftServiceImpl implements OperationsThriftService.Ifac
         if (appDto != null) {
             if (notification.getProfileFilterId() != null) {
                 ProfileFilterDto filterDto = cacheService.getFilter(notification.getProfileFilterId());
-                LOG.debug("Processing filter  {}", filterDto); 
+                LOG.debug("Processing filter  {}", filterDto);
                 if (filterDto.getEndpointProfileSchemaId() != null && filterDto.getServerProfileSchemaId() != null) {
-                    cacheService.resetFilters(new AppProfileVersionsKey(appDto.getApplicationToken(), filterDto
-                            .getEndpointProfileSchemaVersion(), filterDto.getServerProfileSchemaVersion()));
+                    cacheService.resetFilters(new AppProfileVersionsKey(appDto.getApplicationToken(),
+                            filterDto.getEndpointProfileSchemaVersion(), filterDto.getServerProfileSchemaVersion()));
                 } else if (filterDto.getServerProfileSchemaVersion() == null) {
                     for (VersionDto version : profileService.findProfileSchemaVersionsByAppId(appDto.getId())) {
                         LOG.debug("Processing version {}", version);
@@ -200,5 +200,10 @@ public class OperationsThriftServiceImpl implements OperationsThriftService.Ifac
     @Override
     public void onServerProfileUpdate(ThriftServerProfileUpdateMessage message) throws TException {
         clusterService.onServerProfileUpdateMessage(message);
+    }
+
+    @Override
+    public void onEndpointDeregistration(ThriftEndpointDeregistrationMessage message) throws TException {
+        clusterService.onEndpointDeregistrationMessage(message);
     }
 }

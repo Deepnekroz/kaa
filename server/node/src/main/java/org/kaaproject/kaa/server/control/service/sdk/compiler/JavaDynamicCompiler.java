@@ -83,7 +83,7 @@ public class JavaDynamicCompiler {
      * Compile.
      *
      * @param sources the sources
-     * @param additionalOptions
+     * @param additionalOptions the additional options
      * @return the class
      */
     public synchronized Collection<JavaDynamicBean> compile(List<JavaDynamicBean> sources, String... additionalOptions) {

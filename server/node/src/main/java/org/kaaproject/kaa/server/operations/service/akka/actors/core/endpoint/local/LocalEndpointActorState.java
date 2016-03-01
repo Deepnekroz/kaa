@@ -45,7 +45,6 @@ public class LocalEndpointActorState extends AbstractEndpointActorState {
 
     private boolean ucfHashIntialized;
     private byte[] ucfHash;
-    private boolean serverProfileChanged;
 
     public LocalEndpointActorState(String endpointKey, String actorKey) {
         super(endpointKey, actorKey);
@@ -60,9 +59,13 @@ public class LocalEndpointActorState extends AbstractEndpointActorState {
     public boolean isNoChannels() {
         return channelMap.isEmpty();
     }
+    
+    Set<ChannelMetaData> getAllChannels() {
+        return getChannelsByTypes(TransportType.values());
+    }
 
-    List<ChannelMetaData> getChannelsByType(TransportType type) {
-        return this.channelMap.getByTransportType(type);
+    Set<ChannelMetaData> getChannelsByType(TransportType type) {
+        return new HashSet<>(this.channelMap.getByTransportType(type));
     }
 
     Set<ChannelMetaData> getChannelsByTypes(TransportType... types) {

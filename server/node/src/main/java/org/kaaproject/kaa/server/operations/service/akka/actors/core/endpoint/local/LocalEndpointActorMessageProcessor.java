@@ -36,6 +36,7 @@ import org.kaaproject.kaa.common.hash.EndpointObjectHash;
 import org.kaaproject.kaa.server.common.Base64Util;
 import org.kaaproject.kaa.server.common.log.shared.appender.LogEvent;
 import org.kaaproject.kaa.server.common.log.shared.appender.data.BaseLogEventPack;
+import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftEndpointDeregistrationMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftServerProfileUpdateMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftUnicastNotificationMessage;
 import org.kaaproject.kaa.server.operations.pojo.SyncContext;
@@ -116,7 +117,7 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
 
     public void processEndpointEventReceiveMessage(ActorContext context, EndpointEventReceiveMessage message) {
         EndpointEventDeliveryMessage response;
-        List<ChannelMetaData> eventChannels = state.getChannelsByType(TransportType.EVENT);
+        Set<ChannelMetaData> eventChannels = state.getChannelsByType(TransportType.EVENT);
         if (!eventChannels.isEmpty()) {
             for (ChannelMetaData eventChannel : eventChannels) {
                 addEventsAndReply(context, eventChannel, message);
@@ -150,6 +151,8 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
             processServerProfileUpdateMsg(context, (ThriftServerProfileUpdateMessage) thriftMsg);
         } else if (thriftMsg instanceof ThriftUnicastNotificationMessage) {
             processUnicastNotificationMsg(context, (ThriftUnicastNotificationMessage) thriftMsg);
+        } else if (thriftMsg instanceof ThriftEndpointDeregistrationMessage){
+            processEndpointDeregistrationMessage(context, (ThriftEndpointDeregistrationMessage) thriftMsg);
         }
     }
 
@@ -168,11 +171,18 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
     private void processUnicastNotificationMsg(ActorContext context, ThriftUnicastNotificationMessage thriftMsg) {
         processNotification(context, NotificationMessage.fromUnicastId(thriftMsg.getNotificationId()));
     }
+    
+    private void processEndpointDeregistrationMessage(ActorContext context, ThriftEndpointDeregistrationMessage thriftMsg){
+        for(ChannelMetaData channel : state.getAllChannels()){
+            throw new RuntimeException("Throw correct exception to the channel");
+//            sendReply(context, channel.request, );
+        }
+    }
 
     public void processNotification(ActorContext context, NotificationMessage message) {
         LOG.debug("[{}][{}] Processing notification message {}", endpointKey, actorKey, message);
 
-        List<ChannelMetaData> channels = state.getChannelsByType(TransportType.NOTIFICATION);
+        Set<ChannelMetaData> channels = state.getChannelsByType(TransportType.NOTIFICATION);
         if (channels.isEmpty()) {
             LOG.debug("[{}][{}] No channels to process notification message", endpointKey, actorKey);
             return;
@@ -468,7 +478,7 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
                 LOG.debug("[{}][{}] Received request using long poll channel.", endpointKey, actorKey);
                 // Probably old long poll channels lost connection. Sending
                 // reply to them just in case
-                List<ChannelMetaData> channels = state.getChannelsByType(TransportType.EVENT);
+                Set<ChannelMetaData> channels = state.getChannelsByType(TransportType.EVENT);
                 for (ChannelMetaData oldChannel : channels) {
                     if (!oldChannel.getType().isAsync() && channel.getType().isLongPoll()) {
                         LOG.debug("[{}][{}] Closing old long poll channel [{}]", endpointKey, actorKey, oldChannel.getId());
@@ -751,7 +761,7 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
         LOG.debug("[{}][{}] Received log delivery message for request [{}] with status {}", endpointKey, actorKey, message.getRequestId(),
                 message.isSuccess());
         logUploadResponseMap.put(message.getRequestId(), message);
-        List<ChannelMetaData> channels = state.getChannelsByType(TransportType.LOGGING);
+        Set<ChannelMetaData> channels = state.getChannelsByType(TransportType.LOGGING);
         for (ChannelMetaData channel : channels) {
             SyncRequestMessage pendingRequest = channel.getRequestMessage();
             ServerSync pendingResponse = channel.getResponseHolder().getResponse();
@@ -771,7 +781,7 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
         LOG.debug("[{}][{}] Received user verification message for request [{}] with status {}", endpointKey, actorKey,
                 message.getRequestId(), message.isSuccess());
         userAttachResponseMap.put(message.getRequestId(), message);
-        List<ChannelMetaData> channels = state.getChannelsByType(TransportType.USER);
+        Set<ChannelMetaData> channels = state.getChannelsByType(TransportType.USER);
         Entry<UUID, UserVerificationResponseMessage> entryToSend = userAttachResponseMap.entrySet().iterator().next();
         for (ChannelMetaData channel : channels) {
             SyncRequestMessage pendingRequest = channel.getRequestMessage();
