@@ -244,7 +244,6 @@ public class DefaultAkkaServiceTest {
 
         targetPublicKeyHash = ByteBuffer.wrap(SHA1HashUtils.hashToBytes(targetPair.getPublic().getEncoded()));
 
-        // An insecure SDK profile mock
         SdkProfileDto sdkProfile = new SdkProfileDto();
         sdkProfile.setApplicationId(APP_ID);
         sdkProfile.setApplicationToken(APP_TOKEN);

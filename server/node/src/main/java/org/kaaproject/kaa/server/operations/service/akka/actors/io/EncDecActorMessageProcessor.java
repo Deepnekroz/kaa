@@ -257,7 +257,7 @@ public class EncDecActorMessageProcessor {
         LOG.trace("Request data decrypted");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
         LOG.trace("Request data deserialized");
-        PublicKey endpointKey = getAndCheckPublicKey(request);
+        PublicKey endpointKey = getAndVerifyPublicKey(request);
         crypt.setRemotePublicKey(endpointKey);
         if (crypt.verify(message.getEncodedSessionKey(), message.getSessionKeySignature())) {
             LOG.trace("Request data verified");
@@ -274,7 +274,7 @@ public class EncDecActorMessageProcessor {
         LOG.trace("Try to convert raw data to SynRequest object");
         ClientSync request = decodePlatformLevelData(message.getPlatformId(), requestRaw);
         LOG.trace("Request data deserialized");
-        getAndCheckPublicKey(request);
+        this.getAndVerifyPublicKey(request);
         return request;
     }
 
@@ -328,45 +328,51 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private PublicKey getAndCheckPublicKey(ClientSync request)
-            throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException {
-        String sdkToken = getSdkToken(request);
+    private PublicKey getAndVerifyPublicKey(ClientSync request) throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException {
+        String sdkToken = this.getSdkToken(request);
         SdkProfileDto sdkProfile = this.cacheService.getSdkProfileBySdkToken(sdkToken);
-
         if (sdkProfile == null) {
-            LOG.error("Invalid SDK token [{}] received", sdkToken);
+            LOG.error("Invalid SDK token [{}] provided", sdkToken);
             throw new InvalidSDKTokenException();
         }
 
-        PublicKey endpointKey;
-        EndpointObjectHash endpointKeyHash;
+        PublicKey endpointKey = null;
+        EndpointObjectHash endpointKeyHash = null;
+        EndpointVerificationData endpointVerificationData = null;
+
         if (request.getProfileSync() != null && request.getProfileSync().getEndpointPublicKey() != null) {
-            byte[] publicKeySrc = request.getProfileSync().getEndpointPublicKey().array();
-            endpointKey = KeyUtil.getPublic(publicKeySrc);
+            byte[] buffer = request.getProfileSync().getEndpointPublicKey().array();
+            endpointKey = KeyUtil.getPublic(buffer);
             endpointKeyHash = EndpointObjectHash.fromBytes(endpointKey.getEncoded());
             if (Objects.equals(sdkProfile.getVerifyEndpointCredentials(), Boolean.TRUE)) {
-                checkVerificationData(endpointKeyHash, sdkProfile, cacheService.getEndpointVerificationData(endpointKeyHash));
+                endpointVerificationData = this.cacheService.getEndpointVerificationData(endpointKeyHash);
+                this.validateEndpointVerificationData(endpointKeyHash, endpointVerificationData, sdkProfile);
             }
         } else {
-            endpointKeyHash = getEndpointObjectHash(request);
-            EndpointVerificationData verificationData = cacheService.getEndpointVerificationData(endpointKeyHash);
-            checkVerificationData(endpointKeyHash, sdkProfile, verificationData);
-            endpointKey = verificationData.getPublicKey();
+            endpointKeyHash = this.getEndpointObjectHash(request);
+            endpointVerificationData = this.cacheService.getEndpointVerificationData(endpointKeyHash);
+            this.validateEndpointVerificationData(endpointKeyHash, endpointVerificationData, sdkProfile);
+            endpointKey = endpointVerificationData.getPublicKey();
         }
 
         return endpointKey;
     }
 
-    private void checkVerificationData(EndpointObjectHash key, SdkProfileDto sdkProfile, EndpointVerificationData verificationData)
-            throws GeneralSecurityException {
-        if (verificationData == null || verificationData.getPublicKey() == null) {
-            LOG.warn("Endpoint Verification data not found for {}!", key);
-            throw new GeneralSecurityException("Endpoint key not found!");
+    private void validateEndpointVerificationData(
+            EndpointObjectHash endpointKeyHash,
+            EndpointVerificationData endpointVerificationData,
+            SdkProfileDto sdkProfile)
+                    throws GeneralSecurityException {
+
+        if (endpointVerificationData == null || endpointVerificationData.getPublicKey() == null) {
+            String message = "The endpoint public key was not found in the database!";
+            LOG.warn(message);
+            throw new GeneralSecurityException(message);
         }
-        checkSdkAppId(sdkProfile, verificationData.getApplicationId());
+        this.checkApplicationId(sdkProfile, endpointVerificationData.getApplicationId());
     }
 
-    private void checkSdkAppId(SdkProfileDto sdkProfile, String applicationId) throws GeneralSecurityException {
+    private void checkApplicationId(SdkProfileDto sdkProfile, String applicationId) throws GeneralSecurityException {
         if (!Objects.equals(sdkProfile.getApplicationId(), applicationId)) {
             String message = "The endpoint is trying to connect with an SDK generated for a different application!";
             LOG.error(message);
