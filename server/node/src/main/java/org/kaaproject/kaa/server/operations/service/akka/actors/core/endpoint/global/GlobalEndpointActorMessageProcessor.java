@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
 import org.kaaproject.kaa.common.hash.EndpointObjectHash;
 import org.kaaproject.kaa.server.common.Base64Util;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftActorClassifier;
+import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftEndpointDeregistrationMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftServerProfileUpdateMessage;
 import org.kaaproject.kaa.server.common.thrift.gen.operations.ThriftUnicastNotificationMessage;
 import org.kaaproject.kaa.server.operations.service.OperationsService;
@@ -85,6 +86,8 @@ public class GlobalEndpointActorMessageProcessor extends AbstractEndpointActorMe
             processServerProfileUpdateMsg(context, (ThriftServerProfileUpdateMessage) thriftMsg);
         } else if (thriftMsg instanceof ThriftUnicastNotificationMessage) {
             processUnicastNotificationMsg(context, (ThriftUnicastNotificationMessage) thriftMsg);
+        } else if (thriftMsg instanceof ThriftEndpointDeregistrationMessage){
+            requestActorStop(context);
         }
     }
 

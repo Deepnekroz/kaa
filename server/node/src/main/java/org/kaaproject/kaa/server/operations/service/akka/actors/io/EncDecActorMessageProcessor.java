@@ -328,7 +328,8 @@ public class EncDecActorMessageProcessor {
         return syncRequest;
     }
 
-    private PublicKey getAndVerifyPublicKey(ClientSync request) throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException {
+    private PublicKey getAndVerifyPublicKey(ClientSync request)
+            throws InvalidSDKTokenException, EndpointNotRegisteredException, GeneralSecurityException {
         String sdkToken = this.getSdkToken(request);
         SdkProfileDto sdkProfile = this.cacheService.getSdkProfileBySdkToken(sdkToken);
         if (sdkProfile == null) {
@@ -358,16 +359,13 @@ public class EncDecActorMessageProcessor {
         return endpointKey;
     }
 
-    private void validateEndpointVerificationData(
-            EndpointObjectHash endpointKeyHash,
-            EndpointVerificationData endpointVerificationData,
-            SdkProfileDto sdkProfile)
-                    throws GeneralSecurityException {
+    private void validateEndpointVerificationData(EndpointObjectHash endpointKeyHash, EndpointVerificationData endpointVerificationData,
+            SdkProfileDto sdkProfile) throws GeneralSecurityException, EndpointNotRegisteredException {
 
         if (endpointVerificationData == null || endpointVerificationData.getPublicKey() == null) {
             String message = "The endpoint public key was not found in the database!";
             LOG.warn(message);
-            throw new GeneralSecurityException(message);
+            throw new EndpointNotRegisteredException(message);
         }
         this.checkApplicationId(sdkProfile, endpointVerificationData.getApplicationId());
     }

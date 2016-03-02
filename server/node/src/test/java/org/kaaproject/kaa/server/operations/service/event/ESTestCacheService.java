@@ -445,4 +445,16 @@ public class ESTestCacheService implements CacheService {
     public TopicListCacheEntry getTopicListByHash(EndpointObjectHash hash) {
         return null;
     }
+
+    @Override
+    public void resetEndpointVerificationData(EndpointObjectHash endpointKeyHash) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void getAndCheckPublicKey(EndpointObjectHash key) {
+        // TODO Auto-generated method stub
+        
+    }
 }

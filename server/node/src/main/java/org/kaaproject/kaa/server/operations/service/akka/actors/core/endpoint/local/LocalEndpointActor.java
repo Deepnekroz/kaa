@@ -105,11 +105,15 @@ public class LocalEndpointActor extends UntypedActor {
         } else if (message instanceof EndpointUserActionMessage) {
             processEndpointUserActionMessage((EndpointUserActionMessage) message);
         } else if (message instanceof EndpointStopMessage) {
-            LOG.debug("[{}] Received stop request from application actor", actorKey);
-            context().stop(self());
+            processEndpointStop();
         } else {
             LOG.warn("[{}] Received unknown message {}", actorKey, message);
         }
+    }
+
+    private void processEndpointStop() {
+        LOG.debug("[{}] Received stop request from application actor", actorKey);
+        context().stop(self());
     }
     
     private void processEndpointActorMsg(EndpointActorMsg msg) {

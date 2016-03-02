@@ -70,8 +70,12 @@ public abstract class AbstractEndpointActorMessageProcessor<T extends AbstractEn
     public void processActorTimeoutMessage(ActorContext context, ActorTimeoutMessage message) {
         if (state.getLastActivityTime() <= message.getLastActivityTime()) {
             LOG.debug("[{}][{}] Request stop of endpoint actor due to inactivity timeout", endpointKey, actorKey);
-            tellParent(context, new EndpointStopMessage(key, actorKey, context.self()));
+            requestActorStop(context);
         }
+    }
+
+    protected void requestActorStop(ActorContext context) {
+        tellParent(context, new EndpointStopMessage(key, actorKey, context.self()));
     }
 
     protected void tellParent(ActorContext context, Object response) {

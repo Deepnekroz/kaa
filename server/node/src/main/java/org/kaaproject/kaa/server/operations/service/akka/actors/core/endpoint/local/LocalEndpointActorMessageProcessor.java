@@ -87,13 +87,14 @@ import org.kaaproject.kaa.server.sync.UserAttachRequest;
 import org.kaaproject.kaa.server.sync.UserClientSync;
 import org.kaaproject.kaa.server.sync.UserDetachNotification;
 import org.kaaproject.kaa.server.sync.UserServerSync;
+import org.kaaproject.kaa.server.transport.EndpointNotRegisteredException;
 import org.kaaproject.kaa.server.transport.channel.ChannelAware;
 import org.kaaproject.kaa.server.transport.channel.ChannelType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import scala.concurrent.duration.Duration;
 import akka.actor.ActorContext;
+import scala.concurrent.duration.Duration;
 
 public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMessageProcessor<LocalEndpointActorState> {
 
@@ -174,9 +175,9 @@ public class LocalEndpointActorMessageProcessor extends AbstractEndpointActorMes
     
     private void processEndpointDeregistrationMessage(ActorContext context, ThriftEndpointDeregistrationMessage thriftMsg){
         for(ChannelMetaData channel : state.getAllChannels()){
-            throw new RuntimeException("Throw correct exception to the channel");
-//            sendReply(context, channel.request, );
+            sendReply(context, channel.request, new EndpointNotRegisteredException("Endpoint was unregistered!"));
         }
+        requestActorStop(context);
     }
 
     public void processNotification(ActorContext context, NotificationMessage message) {
