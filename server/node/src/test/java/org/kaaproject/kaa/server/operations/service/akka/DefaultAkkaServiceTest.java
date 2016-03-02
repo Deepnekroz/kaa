@@ -151,9 +151,11 @@ public class DefaultAkkaServiceTest {
     private static final String TENANT_ID = "TENANT_ID";
     private static final String USER_ID = "USER_ID";
     private static final String APP_TOKEN = "APP_TOKEN";
-    private static final String SDK_TOKEN = "SDK_TOKEN";
+    private static final String INSECURE_SDK_TOKEN = "INSECURE_SDK_TOKEN";
+    private static final String SECURE_SDK_TOKEN = "SECURE_SDK_TOKEN";
     private static final String INVALID_SDK_TOKEN = "INVALID_SDK_TOKEN";
     private static final String APP_ID = "APP_ID";
+    private static final String ANOTHER_APP_ID = "ANOTHER_APP_ID";
     private static final String PROFILE_BODY = "ProfileBody";
 
     private static final int REQUEST_ID = 42;
@@ -192,6 +194,10 @@ public class DefaultAkkaServiceTest {
     private ByteBuffer targetPublicKeyHash;
 
     private EndpointProfileDto mockProfile;
+
+    // SDK profiles
+    private SdkProfileDto insecureSDK;
+    private SdkProfileDto secureSDK;
 
     @Before
     public void before() throws GeneralSecurityException {
@@ -244,14 +250,9 @@ public class DefaultAkkaServiceTest {
 
         targetPublicKeyHash = ByteBuffer.wrap(SHA1HashUtils.hashToBytes(targetPair.getPublic().getEncoded()));
 
-        SdkProfileDto sdkProfile = new SdkProfileDto();
-        sdkProfile.setApplicationId(APP_ID);
-        sdkProfile.setApplicationToken(APP_TOKEN);
-        sdkProfile.setToken(SDK_TOKEN);
-        Mockito.when(this.cacheService.getSdkProfileBySdkToken(SDK_TOKEN)).thenReturn(sdkProfile);
-
         Mockito.when(cacheService.getTenantIdByAppToken(APP_TOKEN)).thenReturn(TENANT_ID);
-        Mockito.when(cacheService.getAppTokenBySdkToken(SDK_TOKEN)).thenReturn(APP_TOKEN);
+        Mockito.when(cacheService.getAppTokenBySdkToken(INSECURE_SDK_TOKEN)).thenReturn(APP_TOKEN);
+        Mockito.when(cacheService.getAppTokenBySdkToken(SECURE_SDK_TOKEN)).thenReturn(APP_TOKEN);
         Mockito.when(cacheService.getAppTokenBySdkToken(INVALID_SDK_TOKEN)).thenReturn(null);
         Mockito.when(cacheService.getEndpointVerificationData(EndpointObjectHash.fromBytes(clientPublicKeyHash.array())))
                 .thenReturn(new EndpointVerificationData(clientPair.getPublic(), APP_ID));
@@ -322,6 +323,20 @@ public class DefaultAkkaServiceTest {
         when(clusterService.getNodeId()).thenReturn(LOCAL_NODE_ID);
         when(clusterService.getEntityNode(Mockito.any(byte[].class))).thenReturn(LOCAL_NODE_ID);
         when(clusterService.getEntityNode(Mockito.any(EndpointObjectHash.class))).thenReturn(LOCAL_NODE_ID);
+
+        this.insecureSDK = new SdkProfileDto();
+        this.insecureSDK.setApplicationId(APP_ID);
+        this.insecureSDK.setApplicationToken(APP_TOKEN);
+        this.insecureSDK.setToken(INSECURE_SDK_TOKEN);
+        this.insecureSDK.setVerifyEndpointCredentials(false);
+        Mockito.when(this.cacheService.getSdkProfileBySdkToken(INSECURE_SDK_TOKEN)).thenReturn(this.insecureSDK);
+
+        this.secureSDK = new SdkProfileDto();
+        this.secureSDK.setApplicationId(APP_ID);
+        this.secureSDK.setApplicationToken(APP_TOKEN);
+        this.secureSDK.setToken(SECURE_SDK_TOKEN);
+        this.secureSDK.setVerifyEndpointCredentials(true);
+        Mockito.when(this.cacheService.getSdkProfileBySdkToken(SECURE_SDK_TOKEN)).thenReturn(this.secureSDK);
     }
 
     @After
@@ -475,13 +490,13 @@ public class DefaultAkkaServiceTest {
     }
 
     @Test
-    public void testEndpointRegistrationRequest() throws Exception {
+    public void testEndpointRegistrationRequestWithInsecureSDK() throws Exception {
         ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
 
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         request.setSyncRequestMetaData(md);
@@ -509,13 +524,87 @@ public class DefaultAkkaServiceTest {
     }
 
     @Test
+    public void testAuthorizedEndpointRegistrationRequestWithSecureSDK() throws Exception {
+        ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
+
+        ProfileSyncRequest profileSync = new ProfileSyncRequest();
+        profileSync.setEndpointPublicKey(this.clientPublicKey);
+        profileSync.setProfileBody(ByteBuffer.wrap(PROFILE_BODY.getBytes()));
+
+        SyncRequestMetaData syncRequestDetails = new SyncRequestMetaData();
+        syncRequestDetails.setSdkToken(SECURE_SDK_TOKEN);
+        syncRequestDetails.setEndpointPublicKeyHash(this.clientPublicKeyHash);
+        syncRequestDetails.setProfileHash(this.clientPublicKeyHash);
+
+        SyncRequest syncRequest = new SyncRequest();
+        syncRequest.setRequestId(REQUEST_ID);
+        syncRequest.setSyncRequestMetaData(syncRequestDetails);
+        syncRequest.setProfileSyncRequest(profileSync);
+
+        this.whenSync(this.simpleResponse);
+
+        MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
+        ErrorBuilder errorBuilder = Mockito.mock(ErrorBuilder.class);
+
+        // The endpoint is authorized to connect
+        EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(this.clientPublicKeyHash.array());
+        EndpointVerificationData endpointVerificationData = new EndpointVerificationData(this.clientPair.getPublic(), APP_ID);
+        Mockito.when(this.cacheService.getEndpointVerificationData(endpointKeyHash)).thenReturn(endpointVerificationData);
+
+        SessionInitMessage message = toSignedRequest(UUID.randomUUID(), ChannelType.SYNC, channelContextMock, syncRequest, responseBuilder, errorBuilder);
+        Assert.assertNotNull(this.akkaService.getActorSystem());
+        this.akkaService.process(message);
+
+        OperationsService checkRequestProcessed = Mockito.verify(this.operationsService, Mockito.timeout(TIMEOUT * 10).atLeastOnce());
+        checkRequestProcessed.syncClientProfile(Mockito.any(SyncContext.class), Mockito.any(ProfileClientSync.class));
+
+        MessageBuilder checkResponseSent = Mockito.verify(responseBuilder, Mockito.timeout(TIMEOUT).atLeastOnce());
+        checkResponseSent.build(Mockito.any(byte[].class), Mockito.any(boolean.class));
+    }
+
+    @Test
+    public void testUnauthorizedEndpointRegistrationRequestWithSecureSDK() throws Exception {
+        ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
+
+        ProfileSyncRequest profileSync = new ProfileSyncRequest();
+        profileSync.setEndpointPublicKey(this.clientPublicKey);
+        profileSync.setProfileBody(ByteBuffer.wrap(PROFILE_BODY.getBytes()));
+
+        SyncRequestMetaData syncRequestDetails = new SyncRequestMetaData();
+        syncRequestDetails.setSdkToken(SECURE_SDK_TOKEN);
+        syncRequestDetails.setEndpointPublicKeyHash(this.clientPublicKeyHash);
+        syncRequestDetails.setProfileHash(this.clientPublicKeyHash);
+
+        SyncRequest syncRequest = new SyncRequest();
+        syncRequest.setRequestId(REQUEST_ID);
+        syncRequest.setSyncRequestMetaData(syncRequestDetails);
+        syncRequest.setProfileSyncRequest(profileSync);
+
+        this.whenSync(this.simpleResponse);
+
+        MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
+        ErrorBuilder errorBuilder = Mockito.mock(ErrorBuilder.class);
+
+        // The endpoint is not authorized to connect
+        EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(this.clientPublicKeyHash.array());
+        Mockito.when(this.cacheService.getEndpointVerificationData(endpointKeyHash)).thenReturn(null);
+
+        SessionInitMessage message = toSignedRequest(UUID.randomUUID(), ChannelType.SYNC, channelContextMock, syncRequest, responseBuilder, errorBuilder);
+        Assert.assertNotNull(this.akkaService.getActorSystem());
+        this.akkaService.process(message);
+
+        ErrorBuilder checkResponseError = Mockito.verify(errorBuilder, Mockito.timeout(TIMEOUT).atLeastOnce());
+        checkResponseError.build(Mockito.isA(GeneralSecurityException.class));
+    }
+
+    @Test
     public void testEndpointUpdateRequest() throws Exception {
         ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
 
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         request.setSyncRequestMetaData(md);
@@ -543,13 +632,48 @@ public class DefaultAkkaServiceTest {
     }
 
     @Test
+    public void testEndpointFromAnotherApplicationUpdateRequestWithSecureSDK() throws Exception {
+        ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
+
+        ProfileSyncRequest profileSync = new ProfileSyncRequest();
+        profileSync.setProfileBody(ByteBuffer.wrap(PROFILE_BODY.getBytes()));
+
+        SyncRequestMetaData syncRequestDetails = new SyncRequestMetaData();
+        syncRequestDetails.setSdkToken(SECURE_SDK_TOKEN);
+        syncRequestDetails.setEndpointPublicKeyHash(this.clientPublicKeyHash);
+        syncRequestDetails.setProfileHash(this.clientPublicKeyHash);
+
+        SyncRequest syncRequest = new SyncRequest();
+        syncRequest.setRequestId(REQUEST_ID);
+        syncRequest.setSyncRequestMetaData(syncRequestDetails);
+        syncRequest.setProfileSyncRequest(profileSync);
+
+        this.whenSync(this.simpleResponse);
+
+        MessageBuilder responseBuilder = Mockito.mock(MessageBuilder.class);
+        ErrorBuilder errorBuilder = Mockito.mock(ErrorBuilder.class);
+
+        // The endpoint is associated with a different application
+        EndpointObjectHash endpointKeyHash = EndpointObjectHash.fromBytes(this.clientPublicKeyHash.array());
+        EndpointVerificationData endpointVerificationData = new EndpointVerificationData(this.clientPair.getPublic(), ANOTHER_APP_ID);
+        Mockito.when(this.cacheService.getEndpointVerificationData(endpointKeyHash)).thenReturn(endpointVerificationData);
+
+        SessionInitMessage message = toSignedRequest(UUID.randomUUID(), ChannelType.SYNC, channelContextMock, syncRequest, responseBuilder, errorBuilder);
+        Assert.assertNotNull(this.akkaService.getActorSystem());
+        this.akkaService.process(message);
+
+        ErrorBuilder checkResponseError = Mockito.verify(errorBuilder, Mockito.timeout(TIMEOUT).atLeastOnce());
+        checkResponseError.build(Mockito.isA(GeneralSecurityException.class));
+    }
+
+    @Test
     public void testSyncRequest() throws Exception {
         ChannelContext channelContextMock = Mockito.mock(ChannelContext.class);
 
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         request.setSyncRequestMetaData(md);
@@ -581,7 +705,7 @@ public class DefaultAkkaServiceTest {
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         request.setSyncRequestMetaData(md);
@@ -616,7 +740,7 @@ public class DefaultAkkaServiceTest {
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         md.setTimeout(1000l);
@@ -884,7 +1008,7 @@ public class DefaultAkkaServiceTest {
                 crypt.encodeData(requestConverter.toByteArray(request)), false, true);
         final SessionInfo session = new SessionInfo(UUID.randomUUID(), Constants.KAA_PLATFORM_PROTOCOL_AVRO_ID, channelContextMock,
                 ChannelType.ASYNC, crypt.getSessionCipherPair(), EndpointObjectHash.fromBytes(clientPublicKey.array()), APP_TOKEN,
-                SDK_TOKEN, 100, true);
+                INSECURE_SDK_TOKEN, 100, true);
 
         SessionAwareMessage message = new SessionAwareMessage() {
 
@@ -996,7 +1120,7 @@ public class DefaultAkkaServiceTest {
         SyncRequest sourceRequest = new SyncRequest();
         sourceRequest.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         md.setTimeout(TIMEOUT * 1L);
@@ -1014,7 +1138,7 @@ public class DefaultAkkaServiceTest {
         SyncRequest targetRequest = new SyncRequest();
         targetRequest.setRequestId(REQUEST_ID);
         md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(targetPublicKeyHash);
         md.setProfileHash(targetPublicKeyHash);
         md.setTimeout(TIMEOUT * 1L);
@@ -1286,7 +1410,7 @@ public class DefaultAkkaServiceTest {
         SyncRequest request = new SyncRequest();
         request.setRequestId(REQUEST_ID);
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(clientPublicKeyHash);
         md.setProfileHash(clientPublicKeyHash);
         md.setTimeout(1000l);
@@ -1683,7 +1807,7 @@ public class DefaultAkkaServiceTest {
 
     private SyncRequestMetaData buildSyncRequestMetaData(ByteBuffer keyHash) {
         SyncRequestMetaData md = new SyncRequestMetaData();
-        md.setSdkToken(SDK_TOKEN);
+        md.setSdkToken(INSECURE_SDK_TOKEN);
         md.setEndpointPublicKeyHash(keyHash);
         md.setProfileHash(keyHash);
         md.setTimeout(2l * TIMEOUT);

@@ -343,7 +343,7 @@ public class EncDecActorMessageProcessor {
         if (request.getProfileSync() != null && request.getProfileSync().getEndpointPublicKey() != null) {
             byte[] buffer = request.getProfileSync().getEndpointPublicKey().array();
             endpointKey = KeyUtil.getPublic(buffer);
-            endpointKeyHash = EndpointObjectHash.fromBytes(endpointKey.getEncoded());
+            endpointKeyHash = EndpointObjectHash.fromSHA1(endpointKey.getEncoded());
             if (Objects.equals(sdkProfile.getVerifyEndpointCredentials(), Boolean.TRUE)) {
                 endpointVerificationData = this.cacheService.getEndpointVerificationData(endpointKeyHash);
                 this.validateEndpointVerificationData(endpointKeyHash, endpointVerificationData, sdkProfile);
