@@ -19,6 +19,6 @@ kaa_node:
         - ZK_HOSTS=zookeeperhost:2181
         - CASSANDRA_HOSTS=cassandrahost:9042
         - MONGODB_HOSTS=mongodbhost:27017
-        - JDBC_HOST=postgreshost
-        - JDBC_PORT=5432
+        - JDBC_HOST=mariadb
+        - JDBC_PORT=3306
     command: bash -c "/config_listener.sh && /usr/bin/kaa-node start && while true; do sleep 1; done"

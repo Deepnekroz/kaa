@@ -6,7 +6,7 @@ Default environments that comes in this package is:
   - Fully functional Kaa cluster (1x Kaa node, 1x Zookeeper node, 1x Database nodes)
     - Kaa node
     - Zookeeper node
-    - PostgreSQL
+    - MariaDB
     - Cassandra
     - MongoDB
   - Single Kaa node, that can be deployed to an existing cluster
@@ -22,8 +22,8 @@ Base image configuration is done using the following environment variables:
 | ZK_HOSTS           | localhost:2181, anotherhost:2181 | Comma-separated list of Zookeeper nodes hostname:port            |
 | CASSANDRA_HOSTS    | localhost:9042, ...              | Comma-separated list of Cassandra nodes hostname:port            |
 | MONGODB_HOSTS      | localhost:27017, ...             | Comma-separated list of MongoDB nodes hostname:port              |
-| JDBC_HOST          | localhost                        | PostgreSQL database hostname                                     |
-| JDBC_PORT          | 5432                             | PostgreSQL database port                                         |
+| JDBC_HOST          | localhost                        | MariaDB database hostname                                     |
+| JDBC_PORT          | 5432                             | MariaDB database port                                         |
 
 ## Steps to deploy
 
